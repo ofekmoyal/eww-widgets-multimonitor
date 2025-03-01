@@ -1,8 +1,10 @@
 #!/bin/bash
 
 ## Files and cmd
+CONFIG_PATH="$HOME/repos/dotfiles/eww-widgets/eww/bar"
 FILE="$HOME/.cache/eww_launch.xyz"
-EWW="$HOME/.local/bin/eww/eww -c $HOME/.config/eww/bar"
+EWW_PATH=$(which eww)
+EWW="$EWW_PATH -c $CONFIG_PATH"
 
 ## Run eww daemon if not running already
 if [[ ! `pidof eww` ]]; then
@@ -20,8 +22,8 @@ run_eww() {
 ## Launch or close widgets accordingly
 if [[ ! -f "$FILE" ]]; then
 	touch "$FILE"
-	run_eww && bspc config -m LVDS-1 top_padding 49
+	run_eww && echo "running"
 else
-	${EWW} close-all && killall eww
+	${EWW} close-all && pkill eww
 	rm "$FILE"
 fi
