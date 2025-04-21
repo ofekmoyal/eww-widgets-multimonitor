@@ -2,45 +2,45 @@
 (defpoll clock_time :interval "5m" "date +\%I")
 (defpoll clock_minute :interval "5s" "date +\%M")
 (defpoll clock_date :interval "10h" "date '+%d/%m'")
-(defpoll volume_percent :interval "3s" "amixer -D pulse sget Master | grep 'Left:' | awk -F'[][]' '{ print $2 }' | tr -d '%'")
-(defpoll mic_percent :interval "3s" "amixer -D pulse sget Capture | grep 'Left:' | awk -F'[][]' '{ print $2 }' | tr -d '%'")
-(defpoll brightness_percent :interval "5s" "brightnessctl -m -d intel_backlight | awk -F, '{print substr($4, 0, length($4)-1)}' | tr -d '%'")
-(defpoll battery :interval "15s" "./scripts/battery --bat")
-(defpoll battery_status :interval "1m" "./scripts/battery --bat-st")
-(defpoll memory :interval "15s" "scripts/memory")
-(defpoll memory_used_mb :interval "2m" "scripts/mem-ad used")
-(defpoll memory_total_mb :interval "2m" "scripts/mem-ad total")
-(defpoll memory_free_mb :interval "2m" "scripts/mem-ad free")
+(defpoll volume_percent :interval "3s" "wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{print $2 * 100}'")
+(defpoll mic_percent :interval "3s" "wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | awk '{print $2 * 100}'")
+(defpoll brightness_percent :interval "5s" "brightnessctl -m -d amdgpu_bl2 | awk -F, '{print substr($4, 0, length($4)-1)}' | tr -d '%'")
+(defpoll battery :interval "15s" "battery --bat")
+(defpoll battery_status :interval "1m" "battery --bat-st")
+(defpoll memory :interval "15s" "memory")
+(defpoll memory_used_mb :interval "2m" "mem-ad used")
+(defpoll memory_total_mb :interval "2m" "mem-ad total")
+(defpoll memory_free_mb :interval "2m" "mem-ad free")
 (defvar vol_reveal false)
 (defvar br_reveal false)
 (defvar music_reveal false)
 (defvar wifi_rev false)
 (defvar time_rev false)
-(deflisten workspace "scripts/workspace")
+(deflisten workspace "workspace")
 
 
-(defvar eww "$(which eww) -c $HOME/repos/dotfiles/eww-widgets/eww/bar")
+(defvar eww "eww")
 
 
-(defpoll COL_WLAN :interval "1m" "~/repos/dotfiles/eww-widgets/eww/bar/scripts/wifi --COL")
-(defpoll ESSID_WLAN :interval "1m" "~/repos/dotfiles/eww-widgets/eww/bar/scripts/wifi --ESSID")
-(defpoll WLAN_ICON :interval "1m" "~/repos/dotfiles/eww-widgets/eww/bar/scripts/wifi --ICON")
+(defpoll COL_WLAN :interval "1m" "wifi --COL")
+(defpoll ESSID_WLAN :interval "1m" "wifi --ESSID")
+(defpoll WLAN_ICON :interval "1m" "wifi --ICON")
 
 
-(defpoll song :interval "2s"  "~/repos/dotfiles/eww-widgets/eww/bar/scripts/music_info --song")
-(defpoll song_artist :interval "2s"  "~/repos/dotfiles/eww-widgets/eww/bar/scripts/music_info --artist")
-(defpoll current_status :interval "1s"  "~/repos/dotfiles/eww-widgets/eww/bar/scripts/music_info --time")
-(defpoll song_status :interval "2s"  "~/repos/dotfiles/eww-widgets/eww/bar/scripts/music_info --status")
-(defpoll cover_art :interval "2s"  "~/repos/dotfiles/eww-widgets/eww/bar/scripts/music_info --cover")
+(defpoll song :interval "2s"  "music_info --song")
+(defpoll song_artist :interval "2s"  "music_info --artist")
+(defpoll current_status :interval "1s"  "music_info --time")
+(defpoll song_status :interval "2s"  "music_info --status")
+(defpoll cover_art :interval "2s"  "music_info --cover")
 
 (defpoll calendar_day :interval "20h" "date '+%d'")
 (defpoll calendar_year :interval "20h" "date '+%Y'")
 
 ;; widgets
 
-(defwidget wifi [] 
-  (eventbox :onhover "${eww} update wifi_rev=true"
-			  :onhoverlost "${eww} update wifi_rev=false"
+(defwidget wifi []
+  (eventbox :onhover "eww update wifi_rev=true"
+			  :onhoverlost "eww update wifi_rev=false"
 		(box :vexpand "false" :hexpand "false" :space-evenly "false"
 				(button :class "module-wif" :onclick "networkmanager_dmenu" :wrap "false" :limit-width 12 :style "color: ${COL_WLAN};" WLAN_ICON)
 	(revealer :transition "slideright"
@@ -53,7 +53,7 @@
 
 
 (defwidget workspaces []
-  (literal :content workspace))
+    (literal :content workspace))
 
 
 (defwidget bat []
@@ -66,21 +66,22 @@
                 :limit-width 2
                 :tooltip "battery on ${battery}%"
                 :show_truncated false
-                :onclick "$HOME/repos/dotfiles/eww-widgets/eww/bar/scripts/pop system"
+                :onclick "pop system"
                 :wrap false
                 ""))))
 
 
 (defwidget mem []
-		(box :class "mem_module" :vexpand "false" :hexpand "false" 
+		(box :class "mem_module" :vexpand "false"
+             :hexpand "false" :width 5
             (circular-progress :value memory
                 :class "membar"
                 :thickness 4
-            (button 
+            (button
                 :class "iconmem"
-                :limit-width 2
+                ;:limit-width 2
                 :tooltip "using ${memory}% ram"
-                :onclick "$HOME/repos/dotfiles/eww-widgets/eww/bar/scripts/pop system"
+                :onclick "pop system"
                 :show_truncated false
                 :wrap false
                 ""))))
@@ -92,8 +93,8 @@
     (label :class "separ" :text "|")))
 
 (defwidget clock_module []
-  (eventbox :onhover "${eww} update time_rev=true"
-			  :onhoverlost "${eww} update time_rev=false"
+  (eventbox :onhover "eww update time_rev=true"
+			  :onhoverlost "eww update time_rev=false"
     (box :class "module" :space-evenly "false" :orientation "h" :spacing "3" 
       (label :text clock_time :class "clock_time_class" )
       (label :text "" :class "clock_time_sep" )
@@ -102,15 +103,15 @@
 			  :reveal time_rev
 			  :duration "350ms"
       (button :class "clock_date_class"
-             :onclick "$HOME/repos/dotfiles/eww-widgets/eww/bar/scripts/pop calendar" clock_date
+             :onclick "pop calendar" clock_date
         )
   ))))
   
 (defwidget volume []
-  (eventbox :onhover "${eww} update vol_reveal=true"
-			  :onhoverlost "${eww} update vol_reveal=false"
+  (eventbox :onhover "eww update vol_reveal=true"
+			  :onhoverlost "eww update vol_reveal=false"
   (box :class "module-2" :space-evenly "false" :orientation "h" :spacing "3" 
-	(button   :onclick "scripts/pop audio"   :class "volume_icon" "")
+	(button   :onclick "pop audio"   :class "volume_icon" "")
 	(revealer :transition "slideleft"
 			  :reveal vol_reveal
 			  :duration "350ms"
@@ -123,7 +124,7 @@
 			  :onchange "amixer -D pulse sset Master {}%" )))))
 
 (defwidget bright []
-  (eventbox :onhover "${eww} update br_reveal=true" :onhoverlost "${eww} update br_reveal=false"
+  (eventbox :onhover "eww update br_reveal=true" :onhoverlost "eww update br_reveal=false"
   (box :class "module-2" :space-evenly "false" :orientation "h" :spacing "3" 
     (label :text "" :class "bright_icon" :tooltip "brightness")
 	(revealer :transition "slideleft"
@@ -140,19 +141,19 @@
 
 
 	;;  Music 
-(defwidget music [] 
-  (eventbox :onhover "${eww} update music_reveal=true"
-			  :onhoverlost "${eww} update music_reveal=false"
+(defwidget music []
+  (eventbox :onhover "eww update music_reveal=true"
+			  :onhoverlost "eww update music_reveal=false"
 		(box :class "module-2" :orientation "h" :space-evenly "false" :vexpand "false" :hexpand "false" 
 			(box :class "song_cover_art" :vexpand "false" :hexpand "false" :style "background-image: url('${cover_art}');")
-			(button :class "song" :onclick "~/repos/dotfiles/eww-widgets/eww/bar/scripts/pop music" song)
+			(button :class "song" :onclick "pop music" song)
 	    (revealer :transition "slideright"
 			      :reveal music_reveal
 			      :duration "350ms"
           (box :vexpand "false" :hexpand "false" :orientation "h" 
-                    (button :class "song_btn_prev" :onclick "~/repos/dotfiles/eww-widgets/eww/bar/scripts/music_info --prev" "")
-					(button :class "song_btn_play" :onclick "~/repos/dotfiles/eww-widgets/eww/bar/scripts/music_info --toggle" song_status)
-					(button :class "song_btn_next" :onclick "~/repos/dotfiles/eww-widgets/eww/bar/scripts/music_info --next" ""))))))
+                    (button :class "song_btn_prev" :onclick "music_info --prev" "")
+					(button :class "song_btn_play" :onclick "music_info --toggle" song_status)
+					(button :class "song_btn_next" :onclick "music_info --next" ""))))))
 
 
 
@@ -172,8 +173,9 @@
 
 
 (defwidget right []
-	(box :orientation "h" 
-		 :space-evenly false  
+	(box :orientation "h"
+		 :space-evenly false
+         :hexpand true
          :halign "start"
 		 :class "right_modules"
 (workspaces)))
@@ -195,14 +197,17 @@
     ))
 
 (defwindow bar
-    :monitor "eDP-2"
+    :monitor 0
           :geometry (geometry :x "0%"
-                       :y "9px"
-                       :width "98%"
+                       :y "0px"
+                       :width "100%"
                        :height "30px"
                        :anchor "top center")
-          :stacking "fg"
-          :windowtype "dock"
+    :exclusive true
+    :focusable false
+    :namespace "topbar"
+    :stacking "fg"
+    :windowtype "dock"
   (bar_1))
   
 (defwidget system []
@@ -338,9 +343,9 @@
 				(label :halign "center" :class "music" :wrap "true" :limit-width 13 :text song)
 				(label :halign "center" :class "music_artist" :wrap "true" :limit-width 15 :text song_artist)
 				(box :orientation "h" :spacing 15 :halign "center" :space-evenly "false" :vexpand "false" :hexpand "false"
-					(button :class "music_btn_prev" :onclick "~/repos/dotfiles/eww-widgets/eww/bar/scripts/music_info --prev" "")
-					(button :class "music_btn_play" :onclick "~/repos/dotfiles/eww-widgets/eww/bar/scripts/music_info --toggle" song_status)
-					(button :class "music_btn_next" :onclick "~/repos/dotfiles/eww-widgets/eww/bar/scripts/music_info --next" ""))
+					(button :class "music_btn_prev" :onclick "music_info --prev" "")
+					(button :class "music_btn_play" :onclick "music_info --toggle" song_status)
+					(button :class "music_btn_next" :onclick "music_info --next" ""))
 				(box :class "music_bar" :halign "center" :vexpand "false" :hexpand "false" :space-evenly "false"
 					(scale :onscroll "mpc -q seek {}" :min 0 :active "true" :max 100 :value current_status)))))
 

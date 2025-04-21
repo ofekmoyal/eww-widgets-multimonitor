@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-    cmd="$(amixer -D pulse sget Master | grep 'Front Left:' | awk '{ print $6 }')"
+    cmd="$(amixer | grep 'Front Left:' | awk '{ print $6 }')"
 
 
     if [ "$cmd" == "[on]" ]; then
