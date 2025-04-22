@@ -1,5 +1,5 @@
 ;; Variables
-(defpoll clock_time :interval "5m" "date +\%I")
+(defpoll clock_time :interval "1m" "date +\%H")
 (defpoll clock_minute :interval "5s" "date +\%M")
 (defpoll clock_date :interval "10h" "date '+%d/%m'")
 (defpoll volume_percent :interval "3s" "wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{print $2 * 100}'")
