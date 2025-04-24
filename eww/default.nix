@@ -38,14 +38,17 @@
   xdg.configFile."eww" = lib.mkIf config.programs.eww.enable {recursive = true;};
   home.packages = with pkgs;
     lib.mkIf config.programs.eww.enable [
+      bluetui
       coreutils
+      dunst
       dmenu
       eww
       ffmpeg
+      impala
       mpc
-      mpd
       networkmanager
-      networkmanager_dmenu
+      playerctl
+      socat
       icomoon-feather
       jetbrains-mono
       jq
@@ -65,6 +68,87 @@
         	battery
         elif [[ "$1" == "--bat-st" ]]; then
         	battery_stat
+        fi
+      '')
+      (writeShellScriptBin "cpu" ''
+        PREV_TOTAL=0
+        PREV_IDLE=0
+        cpuFile="/tmp/.cpu_usage"
+
+        get_cpu() {
+        	if [[ -f "$cpuFile" ]]; then
+        		fileCont=$(cat "$cpuFile")
+        		PREV_TOTAL=$(echo "$fileCont" | head -n 1)
+        		PREV_IDLE=$(echo "$fileCont" | tail -n 1)
+        	fi
+
+        	CPU=(`cat /proc/stat | grep '^cpu '`) # Get the total CPU statistics.
+        	unset CPU[0]                          # Discard the "cpu" prefix.
+        	IDLE=$CPU[4]                        # Get the idle CPU time.
+
+        	# Calculate the total CPU time.
+        	TOTAL=0
+
+        	for VALUE in "$CPU[@]:0:4"; do
+        		let "TOTAL=$TOTAL+$VALUE"
+        	done
+
+        	if [[ "$PREV_TOTAL" != "" ]] && [[ "$PREV_IDLE" != "" ]]; then
+        		# Calculate the CPU usage since we last checked.
+        		let "DIFF_IDLE=$IDLE-$PREV_IDLE"
+        		let "DIFF_TOTAL=$TOTAL-$PREV_TOTAL"
+        		let "DIFF_USAGE=(1000*($DIFF_TOTAL-$DIFF_IDLE)/$DIFF_TOTAL+5)/10"
+        		echo "$DIFF_USAGE"
+        	else
+        		echo "?"
+        	fi
+
+        	# Remember the total and idle CPU times for the next check.
+        	echo "$TOTAL" > "$cpuFile"
+        	echo "$IDLE" >> "$cpuFile"
+        }
+        get_cpu
+      '')
+      (writeShellScriptBin "poll_workspace" ''
+        # Get initial workspace
+        hyprctl -j activeworkspace | jq -r '.id'
+        # Listen for workspace changes
+        socat -U - UNIX-CONNECT:$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock | while read -r line; do
+          if [[ $line == *"workspace>>"* ]] || [[ $line == *"focusedmon>>"* ]]; then
+            echo $(hyprctl -j activeworkspace | jq -r '.name')
+          fi
+        done
+      '')
+      (writeShellScriptBin "notifs" ''
+        count="$(dunstctl count history)"
+
+            if [ $count -gt 0 ]; then
+                col="#0f0f17"
+                bg="#bbc5d7"
+                icon=""
+            else
+                bg="#0f0f17"
+                col="#bbc5d7"
+                echo ""
+            fi
+
+
+
+            if [ "$(dunstctl is-paused)" == "true" ]; then
+                icon=""
+                col="#d78787"
+                bg="#0f0f17"
+            fi
+
+
+        if [ $1 = "notifs" ]; then
+            echo $icon
+        elif [ $1 = "notifs_col" ]; then
+            echo $col
+        elif [ $1 = "notifs_bg" ]; then
+            echo $bg
+        elif [ $1 = "toggle_notifs" ]; then
+            dunstctl set-paused toggle
         fi
       '')
       (writeShellScriptBin "mem-ad" ''
@@ -87,24 +171,23 @@
       (writeShellScriptBin "music_info" ''
         # scripts by adi1090x
         ## Get data
-        STATUS="$(mpc status)"
-        COVER="/tmp/.music_cover.png"
+        STATUS="$(playerctl status)"
         MUSIC_DIR="$HOME/Music"
 
         ## Get status
         get_status() {
-        	if [[ $STATUS == *"[playing]"* ]]; then
-        		echo ""
+        	if [[ $STATUS == "Playing" ]]; then
+        		echo "播放"
         	else
-        		echo "奈"
+        		echo "暂停"
         	fi
         }
 
         ## Get song
         get_song() {
-        	song=`mpc -f %title% current`
+        	song=`playerctl metadata title`
         	if [[ -z "$song" ]]; then
-        		echo "Offline"
+        		echo "geen muziek"
         	else
         		echo "$song"
         	fi
@@ -112,7 +195,7 @@
 
         ## Get artist
         get_artist() {
-        	artist=`mpc -f %artist% current`
+        	artist=`playerctl metadata artist`
         	if [[ -z "$artist" ]]; then
         		echo ""
         	else
@@ -122,7 +205,7 @@
 
         ## Get time
         get_time() {
-        	time=`mpc status | grep "%)" | awk '{print $4}' | tr -d '(%)'`
+        	time=`playerctl metadata --format '{{xesam:trackNumber}}'`
         	if [[ -z "$time" ]]; then
         		echo "0"
         	else
@@ -138,7 +221,7 @@
         	fi
         }
         get_ttime() {
-        	ttime=`mpc -f %time% current`
+        	ttime=`playerctl position`
         	if [[ -z "$ttime" ]]; then
         		echo "0:00"
         	else
@@ -148,15 +231,15 @@
 
         ## Get cover
         get_cover() {
-        	ffmpeg -i "$MUSIC_DIR/$(mpc current -f %file%)" "$COVER" -y &> /dev/null
-        	STATUS=$?
-
-        	# Check if the file has a embbeded album art
-        	if [ "$STATUS" -eq 0 ];then
-        		echo "$COVER"
-        	else
-        		echo "images/music.png"
-        	fi
+          COVER="/tmp/music_cover.png"
+          art_url=$(playerctl metadata --format '{{ mpris:artUrl }}')
+          if [[ $art_url == file://* ]]; then
+            file_path=$(echo $art_url | sed 's/^file:\/\///')
+            cp "$file_path" "$COVER"
+          elif [[ $art_url == http* ]]; then
+            wget "$art_url" -O "$COVER"       	# Check if the file has a embbeded album art
+          fi
+        	echo "$COVER"
         }
 
         ## Execute accordingly
@@ -175,11 +258,11 @@
         elif [[ "$1" == "--cover" ]]; then
         	get_cover
         elif [[ "$1" == "--toggle" ]]; then
-        	mpc -q toggle
+        	playerctl play-pause
         elif [[ "$1" == "--next" ]]; then
-        	{ mpc -q next; get_cover; }
+        	{ playerctl next; get_cover; }
         elif [[ "$1" == "--prev" ]]; then
-        	{ mpc -q prev; get_cover; }
+        	{ playerctl previous; get_cover; }
         fi
       '')
       (writeShellScriptBin "pop" ''
@@ -273,17 +356,41 @@
         audio
         fi
       '')
+      (writeShellScriptBin "vol" ''
+            cmd="$(amixer | grep 'Front Left:' | awk '{ print $6 }')"
+
+
+            if [ "$cmd" == "[on]" ]; then
+                col="#0f0f17"
+                bg="#bbc5d7"
+                icon=""
+            else
+                bg="#0f0f17"
+                col="#bbc5d7"
+                icon="󰓃"
+            fi
+
+
+
+        if [ $1 = "vol" ]; then
+            echo $icon
+        elif [ $1 = "vol_col" ]; then
+            echo $col
+        elif [ $1 = "vol_bg" ]; then
+            echo $bg
+        fi
+      '')
       (writeShellScriptBin "wifi" ''
         status=$(nmcli g | grep -oE "disconnected")
         essid=$(nmcli c | grep wlp4s0 | awk '{print ($1)}')
 
         if [ $status ] ; then
-            icon=""
-            text=""
+            icon="󱍋"
+            text="Disconnected"
             col="#575268"
 
         else
-            icon=""
+            icon=""
             text=$essid
             col="#a1bdce"
         fi
@@ -296,76 +403,106 @@
         	echo $icon
         fi
       '')
+      (writeShellScriptBin "wifi2" ''
+            if [ "$(systemctl status NetworkManager | grep 'inactive')" ]; then
+                icon=""
+                col="#d78787"
+                bg="#0f0f17"
+            fi
+
+            if [ "$(nmcli g | grep -oE 'disconnected')" ]; then
+                icon="󱍋" # disconnected
+                col="#bfc9db"
+                bg="#0f0f17"
+            else
+                icon="" # connected
+                col="#0f0f17"
+                bg="#bfc9db"
+            fi
+
+
+        if [ $1 = "wifi" ]; then
+            echo $icon
+        elif [ $1 = "wifi_col"  ]; then
+            echo $col
+        elif [ $1 = "wifi_bg" ]; then
+            echo $bg
+        fi
+      '')
       (writeShellScriptBin "workspace" ''
-        workspaces() {
-          ws1="1"
-          ws2="2"
-          ws3="3"
-          ws4="4"
-          ws5="5"
-          ws6="6"
+                workspaces() {
+                  ws1="1"
+                  ws2="2"
+                  ws3="3"
+                  ws4="4"
+                  ws5="5"
+                  ws6="6"
 
-          # Get all workspaces and their status
-          workspaces_json=$(hyprctl workspaces -j)
-          active_workspace=$(hyprctl activeworkspace -j | jq -r '.id')
+                  # Get all workspaces and their status
+                  workspaces_json=$(hyprctl workspaces -j)
+                  active_workspace=$(hyprctl activeworkspace -j | jq -r '.id')
 
-          # Check if occupied
-          o1=$(echo "$workspaces_json" | jq -e ".[] | select(.id == $ws1)" >/dev/null && echo "1" || echo "")
-          o2=$(echo "$workspaces_json" | jq -e ".[] | select(.id == $ws2)" >/dev/null && echo "1" || echo "")
-          o3=$(echo "$workspaces_json" | jq -e ".[] | select(.id == $ws3)" >/dev/null && echo "1" || echo "")
-          o4=$(echo "$workspaces_json" | jq -e ".[] | select(.id == $ws4)" >/dev/null && echo "1" || echo "")
-          o5=$(echo "$workspaces_json" | jq -e ".[] | select(.id == $ws5)" >/dev/null && echo "1" || echo "")
-          o6=$(echo "$workspaces_json" | jq -e ".[] | select(.id == $ws6)" >/dev/null && echo "1" || echo "")
+                  # Check if occupied
+                  o1=$(echo "$workspaces_json" | jq -e ".[] | select(.id == $ws1)" >/dev/null && echo "1" || echo "")
+                  o2=$(echo "$workspaces_json" | jq -e ".[] | select(.id == $ws2)" >/dev/null && echo "1" || echo "")
+                  o3=$(echo "$workspaces_json" | jq -e ".[] | select(.id == $ws3)" >/dev/null && echo "1" || echo "")
+                  o4=$(echo "$workspaces_json" | jq -e ".[] | select(.id == $ws4)" >/dev/null && echo "1" || echo "")
+                  o5=$(echo "$workspaces_json" | jq -e ".[] | select(.id == $ws5)" >/dev/null && echo "1" || echo "")
+                  o6=$(echo "$workspaces_json" | jq -e ".[] | select(.id == $ws6)" >/dev/null && echo "1" || echo "")
 
-          # Check if focused
-          f1=$( [ "$active_workspace" = "$ws1" ] && echo "1" || echo "" )
-          f2=$( [ "$active_workspace" = "$ws2" ] && echo "1" || echo "" )
-          f3=$( [ "$active_workspace" = "$ws3" ] && echo "1" || echo "" )
-          f4=$( [ "$active_workspace" = "$ws4" ] && echo "1" || echo "" )
-          f5=$( [ "$active_workspace" = "$ws5" ] && echo "1" || echo "" )
-          f6=$( [ "$active_workspace" = "$ws6" ] && echo "1" || echo "" )
+                  # Check if focused
+                  f1=$( [ "$active_workspace" = "$ws1" ] && echo "1" || echo "" )
+                  f2=$( [ "$active_workspace" = "$ws2" ] && echo "1" || echo "" )
+                  f3=$( [ "$active_workspace" = "$ws3" ] && echo "1" || echo "" )
+                  f4=$( [ "$active_workspace" = "$ws4" ] && echo "1" || echo "" )
+                  f5=$( [ "$active_workspace" = "$ws5" ] && echo "1" || echo "" )
+                  f6=$( [ "$active_workspace" = "$ws6" ] && echo "1" || echo "" )
 
-          ic_1=""
-          ic_2=""
-          ic_3=""
-          ic_4=""
-          ic_5=""
-          ic_6=""
+                  ic_1=""
+                  ic_2=""
+                  ic_3=""
+                  ic_4=""
+                  ic_5=""
+                  ic_6=""
 
-          if [ "$f1" ]; then
-            ic_1=""
-          elif [ "$f2" ]; then
-            ic_2=""
-          elif [ "$f3" ]; then
-            ic_3=""
-          elif [ "$f4" ]; then
-            ic_4=""
-          elif [ "$f5" ]; then
-            ic_5=""
-          elif [ "$f6" ]; then
-            ic_6=""
-          fi
+                  if [ "$f1" ]; then
+                    ic_1=""
+                  elif [ "$f2" ]; then
+                    ic_2=""
+                  elif [ "$f3" ]; then
+                    ic_3=""
+                  elif [ "$f4" ]; then
+                    ic_4=""
+                  elif [ "$f5" ]; then
+                    ic_5=""
+                  elif [ "$f6" ]; then
+                    ic_6=""
+                  fi
 
-          echo "(box :class \"works\" :orientation \"h\" :spacing 5 :space-evenly false
-                (button :onclick \"hyprctl dispatch workspace $ws1\" :class \"$o1$f1\" \"$ic_1\")
-                (button :onclick \"hyprctl dispatch workspace $ws2\" :class \"$o2$f2\" \"$ic_2\")
-                (button :onclick \"hyprctl dispatch workspace $ws3\" :class \"$o3$f3\" \"$ic_3\")
-                (button :onclick \"hyprctl dispatch workspace $ws4\" :class \"$o4$f4\" \"$ic_4\")
-                (button :onclick \"hyprctl dispatch workspace $ws5\" :class \"$o5$f5\" \"$ic_5\")
-                (button :onclick \"hyprctl dispatch workspace $ws6\" :class \"$o6$f6\" \"$ic_6\"))"
-        }
+                un=0
+                #          echo "(box :class 'works' :orientation 'h' :spacing 5 :space-evenly false
+                #                (button :onclick 'hyprctl dispatch workspace $ws1' :class '$o1$f1' '$ic_1')
+                #                (button :onclick 'hyprctl dispatch workspace $ws2' :class '$o2$f2' '$ic_2')
+                #                (button :onclick 'hyprctl dispatch workspace $ws3' :class '$o3$f3' '$ic_3')
+                #                (button :onclick 'hyprctl dispatch workspace $ws4' :class '$o4$f4' '$ic_4')
+                #                (button :onclick 'hyprctl dispatch workspace $ws5' :class '$o5$f5' '$ic_5')
+                #                (button :onclick 'hyprctl dispatch workspace $ws6' :class '$o6$f6' '$ic_6')
+                #                )"
+        echo 	"(box	:class \"works\"	:orientation \"h\" :spacing \"5\" :space-evenly \"false\" (button :onclick \"hyprctl dispatch workspace $ws1\"	:class	\"$un$o1$f1\"	\"$ic_1\") (button :onclick \"hyprctl dispatch workspace $ws2\"	:class \"$un$o2$f2\"	 \"$ic_2\") (button :onclick \"hyprctl dispatch workspace $ws3\"	:class \"$un$o3$f3\" \"$ic_3\") (button :onclick \"hyprctl dispatch workspace $ws4\"	:class \"$un$o4$f4\"	\"$ic_4\") (button :onclick \"hyprctl dispatch workspace $ws5\"	:class \"$un$o5$f5\" \"$ic_5\")  (button :onclick \"hyprctl dispatch workspace $ws6\"	:class \"$un$o6$f6\" \"$ic_6\"))"
 
-        workspaces
+                }
 
-        # Listen for workspace changes
-        # socat -u UNIX-CONNECT:/tmp/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock - |
-        while read -r line; do
-          case $line in
-            *workspace*|*movewindow*|*movetoworkspace*)
-              workspaces
-              ;;
-          esac
-        done
+                workspaces
+
+                # Listen for workspace changes
+                # socat -u UNIX-CONNECT:/tmp/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock - |
+                while read -r line; do
+                  case $line in
+                    *workspace*|*movewindow*|*movetoworkspace*)
+                      workspaces
+                      ;;
+                  esac
+                done
       '')
       # (writeShellScriptBin "workspace" ''
       #   #TODO, need to convert this into something else
@@ -453,6 +590,8 @@
         done < <(${pkgs.playerctl}/bin/playerctl --follow metadata --format '{{ mpris:artUrl }}' || true)
       '')
     ];
+  services.dunst.enable = true;
+
   programs.eww.configDir = pkgs.stdenv.mkDerivation {
     src = ./.;
     name = "eww-config";
