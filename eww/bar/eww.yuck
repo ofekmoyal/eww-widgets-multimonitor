@@ -16,6 +16,33 @@
 (defvar music_reveal false)
 (defvar wifi_rev false)
 (defvar time_rev false)
+(defvar wrkspcs '[
+  {
+    "status": true,
+    "ws": "1"
+  },
+  {
+    "status": false,
+    "ws": "2"
+  },
+  {
+    "status": true,
+    "ws": "3"
+  },
+  {
+    "status": false,
+    "ws": "4"
+  },
+  {
+    "status": true,
+    "ws": "5"
+  },
+  {
+    "status": false,
+    "ws": "6"
+  }
+]')
+(defvar is_workspace_empty false)
 (deflisten current_workspace :initial "1" "poll_workspace")
 
 (defvar eww "eww")
@@ -102,30 +129,13 @@
 
 (defwidget workspaces []
   (box :class "works" :orientation "h" :spacing 5 :space-evenly false
-  (button
-        :onclick "hyprctl dispatch workspace 1; eww update current_workspace=1"
-        :class {(current_workspace == "1") ? "m011" : "m01"}
-        {(current_workspace == "1") ? "" : ""})
-  (button
-        :onclick "hyprctl dispatch workspace 2; eww update current_workspace=2"
-        :class {(current_workspace == "2") ? "m011" : "m01"}
-        {(current_workspace == "2") ? "" : ""})
-(button
-        :onclick "hyprctl dispatch workspace 3; eww update current_workspace=3"
-        :class {(current_workspace == "3") ? "m011" : "m01"}
-        {(current_workspace == "3") ? "" : ""})
-(button
-        :onclick "hyprctl dispatch workspace 4; eww update current_workspace=4"
-        :class {(current_workspace == "4") ? "m011" : "m01"}
-        {(current_workspace == "4") ? "" : ""})
-(button
-        :onclick "hyprctl dispatch workspace 5; eww update current_workspace=5"
-        :class {(current_workspace == "5") ? "m011" : "m01"}
-        {(current_workspace == "5") ? "" : ""})
-(button
-        :onclick "hyprctl dispatch workspace 6; eww update current_workspace=6"
-        :class {(current_workspace == "6") ? "m011" : "m01"}
-        {(current_workspace == "6") ? "" : ""})))
+  (for item in wrkspcs
+    (button
+        :onclick "hyprctl dispatch workspace ${item.ws}; eww update current_workspace=${item.ws}; test_workspace"
+        :class {(current_workspace == item.ws) ? "m011" : (item.status ? "m0" : "m01")}
+        {(current_workspace == item.ws) ? "" : ""}))
+  )
+)
 
 ;        (button :onclick "hyprctl dispatch workspace 1" :class "m001" "")
 ;        (button :onclick "hyprctl dispatch workspace 2" :class "m01" "")

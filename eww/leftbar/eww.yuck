@@ -117,7 +117,7 @@
                      :valign "start" 
                      :text time_month_name))))
 
-(defwidget music []
+(defwidget music_left []
 		(box :orientation "v" :space-evenly "false" :vexpand "false" :hexpand "false"
 			(box :orientation "v" :spacing 5 :space-evenly "false" :vexpand "false" :hexpand "false" :class "msc_bg"
 				(label :halign "start" :class "song" :wrap "false" :limit-width 12 :text song)
@@ -125,10 +125,10 @@
 
 (defwidget music_ctl []
 				(box :orientation "v" :spacing 1 :halign "center" :space-evenly "false" :vexpand "false" :hexpand "false" :class "msc_ctl_bg"
-					(button :class "song_btn_prev" :onclick "~/.config/eww/leftbar/scripts/music_info --prev" "")
-					(button :class "song_btn_play" :onclick "~/.config/eww/leftbar/scripts/music_info --toggle" song_status)
-					(button :class "song_btn_next" :onclick "~/.config/eww/leftbar/scripts/music_info --next" "")
-					(button :class "song_btn_loop" :onclick "~/.config/eww/leftbar/scripts/music_info --loop" loop_status)))
+					(button :class "song_btn_prev" :onclick "music_info --prev" "")
+					(button :class "song_btn_play" :onclick "music_info --toggle" song_status)
+					(button :class "song_btn_next" :onclick "music_info --next" "")
+					(button :class "song_btn_loop" :onclick "music_info --loop" loop_status)))
 
 
 (defwidget music_prog []
@@ -144,7 +144,7 @@
   (box :class "sep" :orientation "h" :space-evenly "false"))
 
 
-(defwidget system []
+(defwidget system_left []
   (box :class "sys_win" :orientation "h" :space-evenly "false" :hexpand "false" :vexpand "false" :spacing 13 
       (box :class "sys_bat_box" :orientation "v" :space-evenly "false" :hexpand "false" :vexpand "false"
       (circular-progress :value battery
@@ -191,7 +191,7 @@
                 :wrap false))))
 
 
-		(defwidget audio []
+		(defwidget audio_left []
 			(box :vexpand "false" :hexpand "false"
 				(box :orientation "h" :spacing 25 :halign "center" :valign "center" :space-evenly "false" :vexpand "false" :hexpand "false"
 					(box :class "volume_bar" :orientation "v" :spacing 20 :space-evenly "false" :vexpand "false" :hexpand "false"
@@ -262,7 +262,7 @@
              :height "140px"
              :x "0px"
              :y "300px")
-  (music))
+  (music_left))
 
 (defwindow song_ctl :stacking "fg" :focusable "false" :screen 1
   :geometry (geometry 
@@ -296,7 +296,7 @@
              :height "160px"
              :x "10px"
              :y "510px")
-  (system))
+  (system_left))
 
 
 
@@ -306,7 +306,7 @@
              :height "160px"
              :x "370px"
              :y "307px")
-  (audio))
+  (audio_left))
 
 
 (defwindow sys_tray

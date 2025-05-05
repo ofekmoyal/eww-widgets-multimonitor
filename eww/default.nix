@@ -109,6 +109,21 @@
         }
         get_cpu
       '')
+      (writeShellScriptBin "test_workspace" ''
+        work=$(hyprctl workspaces -j | jq '.[] | {id}' | jq --arg is_fill true '. + {filled: $is_fill}' | jq -s '.')
+        max_id=$(echo $work | jq 'max_by(.id)' | jq '.id')
+        for i in $(seq 1 $max_id)
+          do
+            test=$(echo "$work" | jq --arg query "$i" '.[] | select(.id == ($query | tonumber))')
+          if [[ ! "$test" ]]; then
+            work=$(echo $work | jq --arg ii $i '. + [{"id": $ii, "filled": "false"}]')
+          fi
+         done
+                curr=$(eww get current_workspace)
+                test=$(hyprctl workspaces | grep "ID $curr ($curr)")
+                res=$(if [[ -z "$test" ]]; then echo "true"; else echo "false"; fi)
+                eww update is_workspace_empty=$res
+      '')
       (writeShellScriptBin "poll_workspace" ''
         # Get initial workspace
         hyprctl -j activeworkspace | jq -r '.id'
