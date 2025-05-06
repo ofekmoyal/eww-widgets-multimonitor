@@ -110,27 +110,31 @@
         get_cpu
       '')
       (writeShellScriptBin "test_workspace" ''
-        work=$(hyprctl workspaces -j | jq '.[] | {id}' | jq --arg is_fill true '. + {filled: $is_fill}' | jq -s '.')
-        max_id=$(echo $work | jq 'max_by(.id)' | jq '.id')
-        for i in $(seq 1 $max_id)
-          do
-            test=$(echo "$work" | jq --arg query "$i" '.[] | select(.id == ($query | tonumber))')
-          if [[ ! "$test" ]]; then
-            work=$(echo $work | jq --arg ii $i '. + [{"id": $ii, "filled": "false"}]')
+        echo $(hyprctl workspaces -j | jq '.[] | {id}' | jq --arg is_fill 1 '. + {"status": ($is_fill | tonumber)}' | jq -s '.' | jq -r 'sort_by(.id)')
+        socat -U - UNIX-CONNECT:$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock | while read -r line; do
+          if [[ $line == *"workspace>>"* ]] || [[ $line == *"focusedmon>>"* ]]; then
+            work=$(hyprctl workspaces -j | jq '.[] | {id}' | jq --arg is_fill 1 '. + {"status": ($is_fill | tonumber)}' | jq -s '.' | jq -r 'sort_by(.id)')
+            max_id=$(echo $work | jq 'max_by(.id)' | jq '.id')
+            for i in $(seq 1 $max_id)
+              do
+              test=$(echo "$work" | jq --arg query "$i" '.[] | select(.id == ($query | tonumber))')
+              if [[ ! "$test" ]]; then
+                work=$(echo $work | jq --arg ii $i '. + [{"id": ($ii | tonumber), "status": (0 | tonumber)}]' | jq -r 'sort_by(.id)')
+              fi
+            done
+            echo $work
           fi
-         done
-                curr=$(eww get current_workspace)
-                test=$(hyprctl workspaces | grep "ID $curr ($curr)")
-                res=$(if [[ -z "$test" ]]; then echo "true"; else echo "false"; fi)
-                eww update is_workspace_empty=$res
+        done
       '')
       (writeShellScriptBin "poll_workspace" ''
         # Get initial workspace
-        hyprctl -j activeworkspace | jq -r '.id'
+        echo $(hyprctl -j activeworkspace | jq -r '.id')
         # Listen for workspace changes
         socat -U - UNIX-CONNECT:$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock | while read -r line; do
           if [[ $line == *"workspace>>"* ]] || [[ $line == *"focusedmon>>"* ]]; then
-            echo $(hyprctl -j activeworkspace | jq -r '.name')
+            cur=$(hyprctl -j activeworkspace | jq -r '.id')
+            eww update current_workspace=$cur
+            echo $cur
           fi
         done
       '')

@@ -16,34 +16,9 @@
 (defvar music_reveal false)
 (defvar wifi_rev false)
 (defvar time_rev false)
-(defvar wrkspcs '[
-  {
-    "status": true,
-    "ws": "1"
-  },
-  {
-    "status": false,
-    "ws": "2"
-  },
-  {
-    "status": true,
-    "ws": "3"
-  },
-  {
-    "status": false,
-    "ws": "4"
-  },
-  {
-    "status": true,
-    "ws": "5"
-  },
-  {
-    "status": false,
-    "ws": "6"
-  }
-]')
+(deflisten wrkspcs :initial '[{"id": 1, "status": 1}]' `test_workspace`)
 (defvar is_workspace_empty false)
-(deflisten current_workspace :initial "1" "poll_workspace")
+(deflisten current_workspace :initial "1" `poll_workspace`)
 
 (defvar eww "eww")
 
@@ -131,9 +106,9 @@
   (box :class "works" :orientation "h" :spacing 5 :space-evenly false
   (for item in wrkspcs
     (button
-        :onclick "hyprctl dispatch workspace ${item.ws}; eww update current_workspace=${item.ws}; test_workspace"
-        :class {(current_workspace == item.ws) ? "m011" : (item.status ? "m0" : "m01")}
-        {(current_workspace == item.ws) ? "" : ""}))
+        :onclick "hyprctl dispatch workspace ${item.id}; eww update current_workspace=${item.id};"
+        :class {(current_workspace == item.id) ? "m011" : ((item.status == 1) ? "m01" : "m0")}
+        {(current_workspace == item.id) ? "" : ""}))
   )
 )
 
