@@ -1,7 +1,7 @@
 ;; Variables
 (defpoll clock_time :interval "1m" "date +\%H")
 (defpoll clock_minute :interval "5s" "date +\%M")
-(defpoll clock_date :interval "10h" "date '+%d/%m'")
+(defpoll clock_date :interval "5m" "date '+%d/%m'")
 (defpoll volume_percent :interval "3s" "wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{print $2 * 100}'")
 (defpoll mic_percent :interval "3s" "wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | awk '{print $2 * 100}'")
 (defpoll brightness :interval "5s" "brightnessctl -m -d amdgpu_bl2 | awk -F, '{print substr($4, 0, length($4)-1)}' | tr -d '%'")
@@ -112,15 +112,6 @@
   )
 )
 
-;        (button :onclick "hyprctl dispatch workspace 1" :class "m001" "")
-;        (button :onclick "hyprctl dispatch workspace 2" :class "m01" "")
-;        (button :onclick "hyprctl dispatch workspace 3" :class "m01" "")
-;        (button :onclick "hyprctl dispatch workspace 4" :class "m01" "")
-;        (button :onclick "hyprctl dispatch workspace 5" :class "0" "")
-;        (button :onclick "hyprctl dispatch workspace 6" :class "0" "")
-;        ))
- ;   (literal :content workspace))
-
 
 (defwidget bat []
 		(box :class "bat_module" :vexpand "false" :hexpand "false" 
@@ -163,7 +154,7 @@
 			  :onhoverlost "eww update time_rev=false"
     (box :class "module" :space-evenly "false" :orientation "h" :spacing "3" 
       (label :text clock_time :class "clock_time_class" )
-      (label :text "" :class "clock_time_sep" )
+      (label :text "󰇙" :class "clock_time_sep" )
       (label :text clock_minute :class "clock_minute_class")
 	  (revealer :transition "slideleft"
 			  :reveal time_rev
@@ -558,7 +549,7 @@
                 :class "sys_icon_mem"
                 :limit-width 4
                 :show_truncated false
-                :wrap false))))
+                   :wrap false))))
 
 		(defwidget audio_left []
 			(box :vexpand "false" :hexpand "false"
@@ -582,7 +573,7 @@
       (button :class "log_but" :onclick "poweroff" ""))))
 
 (defwidget stats []
-  (box :orientation "h" :space-evenly "false" 
+  (box :orientation "h" :space-evenly "false"
 ;;    (label :class "br_icon" :text "")
 	  (box :class "bright" :orientation "h" :space-evenly "false" :vexpand "false" :hexpand "false"
           (scale :orientation "h" :min 0 :max 100 :value brightness :onchange "brightnessctl set {}%" ))))
@@ -597,91 +588,91 @@
   (main))
 
 
-(defwindow pfp
-  :geometry (geometry :anchor "left top"
-             :width "190px"
-             :height "23"
-             :x "0px"
-             :y "65px")
-  (profile))
-
-
-(defwindow time
-  :geometry (geometry :anchor "left top"
-             :width "260px"
-             :height "100"
-             :x "220px"
-             :y "100px")
-  (time))
-
-
-(defwindow song :stacking "fg" :focusable "false" :screen 1
-  :geometry (geometry 
-             :width "260px"
-             :height "140px"
-             :x "0px"
-             :y "300px")
-  (music_left))
-
-(defwindow song_ctl :stacking "fg" :focusable "false" :screen 1
-  :geometry (geometry 
-             :width "70px"
-             :height "187px"
-             :x "270px"
-             :y "310px")
-  (music_ctl))
-
-
-(defwindow song_prog :stacking "fg" :focusable "false" :screen 1
-  :geometry (geometry 
-             :width "250px"
-             :height "30px"
-             :x "10px"
-             :y "460px")
-  (music_prog))
-
-(defwindow seper :stacking "fg" :focusable "false" :screen 1
-  :geometry (geometry 
-             :width "420px"
-             :height "2px"
-             :x "25px"
-             :y "270px")
-  (sep))
-
-
-(defwindow sys_usg
-  :geometry (geometry
-             :width "420px"
-             :height "160px"
-             :x "10px"
-             :y "510px")
-  (system_left))
-
-
-
-(defwindow audio
-  :geometry (geometry
-             :width "0px"
-             :height "160px"
-             :x "370px"
-             :y "307px")
-  (audio_left))
-
-
-(defwindow sys_tray
-  :geometry (geometry
-             :width "100px"
-             :height "120px"
-             :x "15px"
-             :y "730px")
-  (sustray))
-
-
-(defwindow quote
-  :geometry (geometry
-             :width "295px"
-             :height "10px"
-             :x "5px"
-             :y "695px")
-  (stats))
- 
+;(defwindow pfp
+;  :geometry (geometry :anchor "left top"
+;             :width "190px"
+;             :height "23"
+;             :x "0px"
+;             :y "65px")
+;  (profile))
+;
+;
+;(defwindow time
+;  :geometry (geometry :anchor "left top"
+;             :width "260px"
+;             :height "100"
+;             :x "220px"
+;             :y "100px")
+;  (time))
+;
+;
+;(defwindow song :stacking "fg" :focusable "false" :screen 1
+;  :geometry (geometry 
+;             :width "260px"
+;             :height "140px"
+;             :x "0px"
+;             :y "300px")
+;  (music_left))
+;
+;(defwindow song_ctl :stacking "fg" :focusable "false" :screen 1
+;  :geometry (geometry 
+;             :width "70px"
+;             :height "187px"
+;             :x "270px"
+;             :y "310px")
+;  (music_ctl))
+;
+;
+;(defwindow song_prog :stacking "fg" :focusable "false" :screen 1
+;  :geometry (geometry 
+;             :width "250px"
+;             :height "30px"
+;             :x "10px"
+;             :y "460px")
+;  (music_prog))
+;
+;(defwindow seper :stacking "fg" :focusable "false" :screen 1
+;  :geometry (geometry 
+;             :width "420px"
+;             :height "2px"
+;             :x "25px"
+;             :y "270px")
+;  (sep))
+;
+;
+;(defwindow sys_usg
+;  :geometry (geometry
+;             :width "420px"
+;             :height "160px"
+;             :x "10px"
+;             :y "510px")
+;  (system_left))
+;
+;
+;
+;(defwindow audio
+;  :geometry (geometry
+;             :width "0px"
+;             :height "160px"
+;             :x "370px"
+;             :y "307px")
+;  (audio_left))
+;
+;
+;(defwindow sys_tray
+;  :geometry (geometry
+;             :width "100px"
+;             :height "120px"
+;             :x "15px"
+;             :y "730px")
+;  (sustray))
+;
+;
+;(defwindow quote
+;  :geometry (geometry
+;             :width "295px"
+;             :height "10px"
+;             :x "5px"
+;             :y "695px")
+;  (stats))
+; 

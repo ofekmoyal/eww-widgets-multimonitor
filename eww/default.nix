@@ -50,9 +50,11 @@
       playerctl
       socat
       icomoon-feather
-      jetbrains-mono
+      nerd-fonts.jetbrains-mono
+      nerd-fonts.symbols-only
+      nerd-fonts.fira-code
+      nerd-fonts.hack
       jq
-      nerdfonts
       wireplumber
       (writeShellScriptBin "battery" ''
         battery() {
@@ -110,10 +112,10 @@
         get_cpu
       '')
       (writeShellScriptBin "test_workspace" ''
-        echo $(hyprctl workspaces -j | jq '.[] | {id}' | jq --arg is_fill 1 '. + {"status": ($is_fill | tonumber)}' | jq -s '.' | jq -r 'sort_by(.id)')
+        echo $(hyprctl workspaces -j | jq '.[] | select(.id > 0) | {id}' | jq --arg is_fill 1 '. + {"status": ($is_fill | tonumber)}' | jq -s '.' | jq -r 'sort_by(.id)')
         socat -U - UNIX-CONNECT:$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock | while read -r line; do
           if [[ $line == *"workspace>>"* ]] || [[ $line == *"focusedmon>>"* ]]; then
-            work=$(hyprctl workspaces -j | jq '.[] | {id}' | jq --arg is_fill 1 '. + {"status": ($is_fill | tonumber)}' | jq -s '.' | jq -r 'sort_by(.id)')
+            work=$(hyprctl workspaces -j | jq '.[] | select(.id > 0) | {id}' | jq --arg is_fill 1 '. + {"status": ($is_fill | tonumber)}' | jq -s '.' | jq -r 'sort_by(.id)')
             max_id=$(echo $work | jq 'max_by(.id)' | jq '.id')
             for i in $(seq 1 $max_id)
               do

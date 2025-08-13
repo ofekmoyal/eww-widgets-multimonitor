@@ -572,10 +572,10 @@ calendar:indeterminate {
 
 
 //general 
-//.sep {
-//  background-color: #bfc9db;
-//  border-radius: 8px;
-//}
+.sep {
+  background-color: #bfc9db;
+  border-radius: 8px;
+}
 
 .profile_picture {
   background-image: url('images/profile.png');
@@ -599,4 +599,35 @@ calendar:indeterminate {
   font-size: 36px;
   font-weight: bold;
   margin: -15px 0px 0px 0px;
+}
+
+.bg {
+  background-color: #0f0f17;
+  border-radius: 0px;
+}
+
+.bg_alt {
+  background-color: #13141c;
+  border-radius: 16px;
+}
+
+.close_btn {
+  font-size: 44px;
+  color: #767c88;
+  margin: 0px 0px 0px 10px;
+}
+
+.exit_btn {
+  font-size: 56px;
+  color: #d78787;
+}
+
+.close_bg {
+  background-color: #13141c;
+  border-radius: 0px 20px 0px 40px;
+}
+
+.win {
+  background-color: #13141c;
+  border-radius: 18px;
 }

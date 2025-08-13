@@ -20,33 +20,33 @@
 (defpoll time_month_name :interval "48h"
       "date +\%B")
 
-(defpoll song :interval "3s"  "~/.config/eww/bar/scripts/music_info --song")
-(defpoll song_artist :interval "3s"  "~/.config/eww/leftbar/scripts/music_info --artist")
-(defpoll song_status :interval "3s"  "~/.config/eww/leftbar/scripts/music_info --status")
-(defpoll loop_status :interval "5s"  "~/.config/eww/leftbar/scripts/music_info --loop_ic")
-(defpoll song_time :interval "1s"  "~/.config/eww/leftbar/scripts/music_info --time")
+(defpoll song :interval "3s"  "music_info --song")
+(defpoll song_artist :interval "3s"  "music_info --artist")
+(defpoll song_status :interval "3s"  "music_info --status")
+(defpoll loop_status :interval "5s"  "music_info --loop_ic")
+(defpoll song_time :interval "1s"  "music_info --time")
 
 (defpoll battery :interval "15s" "./scripts/battery --bat")
 (defpoll memory :interval "15s" "scripts/memory")
 (defpoll cpu :interval "17s" "scripts/cpu")
 
 
-(defpoll wifi_icon :interval "15s" "./scripts/wifi wifi")
-(defpoll wifi_col :interval "15s" "scripts/wifi wifi_col")
-(defpoll wifi_bg :interval "17s" "scripts/wifi wifi_bg")
+(defpoll wifi_icon :interval "15s" "wifi2 wifi")
+(defpoll wifi_col :interval "15s" "wifi2 wifi_col")
+(defpoll wifi_bg :interval "17s" "wifi2 wifi_bg")
 
-(defpoll notif_icon :interval "15s" "./scripts/notifs notifs")
-(defpoll notif_col :interval "15s" "scripts/notifs notifs_col")
-(defpoll notif_bg :interval "17s" "scripts/notifs notifs_bg")
+(defpoll notif_icon :interval "15s" "notifs notifs")
+(defpoll notif_col :interval "15s" "notifs notifs_col")
+(defpoll notif_bg :interval "17s" "notifs notifs_bg")
 
 
-(defpoll vol_icon :interval "15s" "./scripts/vol vol")
-(defpoll vol_col :interval "15s" "scripts/vol vol_col")
-(defpoll vol_bg :interval "17s" "scripts/vol vol_bg")
+(defpoll vol_icon :interval "15s" "vol vol")
+(defpoll vol_col :interval "15s" "vol vol_col")
+(defpoll vol_bg :interval "17s" "vol vol_bg")
 
-(defpoll volume_percent :interval "6s" "amixer -D pulse sget Master | grep 'Left:' | awk -F'[][]' '{ print $2 }' | tr -d '%'")
-(defpoll mic_percent :interval "6s" "amixer -D pulse sget Capture | grep 'Left:' | awk -F'[][]' '{ print $2 }' | tr -d '%'")
-(defpoll brightness :interval "6s" "brightnessctl -m -d intel_backlight | awk -F, '{print substr($4, 0, length($4)-1)}' | tr -d '%'")
+(defpoll volume_percent :interval "6s" "wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{print $2 * 100}'")
+(defpoll mic_percent :interval "6s" "wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | awk '{print $2 * 100}'")
+(defpoll brightness :interval "6s" "brightnessctl -m -d amdgpu_bl2 | awk -F, '{print substr($4, 0, length($4)-1)}' | tr -d '%'")
 
 
 (defwidget profile []
