@@ -1,678 +1,807 @@
-;; Variables
-(defpoll clock_time :interval "1m" "date +\%H")
-(defpoll clock_minute :interval "5s" "date +\%M")
-(defpoll clock_date :interval "5m" "date '+%d/%m'")
-(defpoll volume_percent :interval "3s" "wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{print $2 * 100}'")
-(defpoll mic_percent :interval "3s" "wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | awk '{print $2 * 100}'")
-(defpoll brightness :interval "5s" "brightnessctl -m -d amdgpu_bl2 | awk -F, '{print substr($4, 0, length($4)-1)}' | tr -d '%'")
-(defpoll battery :interval "15s" "battery --bat")
-(defpoll battery_status :interval "1m" "battery --bat-st")
-(defpoll memory :interval "15s" "memory")
-(defpoll memory_used_mb :interval "2m" "mem-ad used")
-(defpoll memory_total_mb :interval "2m" "mem-ad total")
-(defpoll memory_free_mb :interval "2m" "mem-ad free")
-(defvar vol_reveal false)
-(defvar br_reveal false)
-(defvar music_reveal false)
-(defvar wifi_rev false)
-(defvar time_rev false)
-(deflisten wrkspcs :initial '[{"id": 1, "status": 1}]' `test_workspace`)
-(defvar is_workspace_empty false)
-(deflisten current_workspace :initial "1" `poll_workspace`)
+;; =============================================================================
+;; EWW (Elkowar's Wacky Widgets) Configuration
+;; A comprehensive status bar and widget system for Hyprland
+;; =============================================================================
 
-(defvar eww "eww")
+;; =============================================================================
+;; VARIABLE DEFINITIONS - System Monitoring & Data Sources
+;; =============================================================================
 
+;; Time and Date Variables - Various time formats for different widgets
+(defpoll clock_time :interval "1m" "date +\%H")                    ; Current hour (24h format)
+(defpoll clock_minute :interval "5s" "date +\%M")                 ; Current minute (frequent updates)
+(defpoll clock_date :interval "5m" "date '+%d/%m'")               ; Date in day/month format
 
-(defpoll COL_WLAN :interval "1m" "wifi --COL")
-(defpoll ESSID_WLAN :interval "1m" "wifi --ESSID")
-(defpoll WLAN_ICON :interval "1m" "wifi --ICON")
+;; Audio Control Variables - Volume and microphone levels
+(defpoll volume_percent :interval "3s" "wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{print $2 * 100}'")    ; Speaker volume percentage
+(defpoll mic_percent :interval "3s" "wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | awk '{print $2 * 100}'")     ; Microphone volume percentage
 
+;; Display and Hardware Monitoring
+(defpoll brightness :interval "5s" "brightnessctl -m -d amdgpu_bl2 | awk -F, '{print substr($4, 0, length($4)-1)}' | tr -d '%'")  ; Screen brightness level
+(defpoll battery :interval "15s" "battery --bat")                 ; Battery percentage
+(defpoll battery_status :interval "1m" "battery --bat-st")       ; Battery charging status
+(defpoll memory :interval "15s" "memory")                         ; Memory usage percentage
+(defpoll memory_used_mb :interval "2m" "mem-ad used")            ; Memory used in MB
+(defpoll memory_total_mb :interval "2m" "mem-ad total")          ; Total memory in MB
+(defpoll memory_free_mb :interval "2m" "mem-ad free")            ; Free memory in MB
 
-(defpoll song :interval "2s"  "music_info --song")
-(defpoll song_artist :interval "2s"  "music_info --artist")
-(defpoll song_time :interval "1s"  "music_info --time")
-(defpoll song_status :interval "2s"  "music_info --status")
-(defpoll cover_art :interval "2s"  "music_info --cover")
-(defpoll loop_status :interval "5s"  "~/.config/eww/leftbar/scripts/music_info --loop_ic")
+;; UI State Variables - Control reveal animations and visibility
+(defvar vol_reveal false)        ; Volume slider reveal state
+(defvar br_reveal false)         ; Brightness slider reveal state  
+(defvar music_reveal false)      ; Music controls reveal state
+(defvar wifi_rev false)          ; WiFi info reveal state
+(defvar time_rev false)          ; Date reveal state
 
-(defpoll calendar_day :interval "20h" "date '+%d'")
-(defpoll calendar_year :interval "20h" "date '+%Y'")
+;; Workspace Management - Track Hyprland workspaces
+(deflisten wrkspcs :initial '[{"id": 1, "status": 1}]' `test_workspace`)  ; Workspace list with status
+(defvar is_workspace_empty false)                                       ; Workspace empty flag
+(deflisten current_workspace :initial "1" `poll_workspace`)             ; Currently active workspace
 
-;;define for leftbar
-(defvar IMAGE "images/profile.png")
-(defpoll username :interval "48h"  "whoami")
+;; Application Reference
+(defvar eww "eww")  ; EWW command reference for scripts
 
-(defpoll uptime :interval "50s" "uptime -p | sed -e 's/up //;s/ hours,/h/;s/ hour,/h/;s/ minutes/m/;s/ minute/m/'")
+;; Network and WiFi Information
+(defpoll COL_WLAN :interval "1m" "wifi --COL")    ; WiFi icon color based on connection state
+(defpoll ESSID_WLAN :interval "1m" "wifi --ESSID") ; WiFi network name (SSID)
+(defpoll WLAN_ICON :interval "1m" "wifi --ICON")  ; WiFi status icon
 
-(defpoll time_hour :interval "5m"
-       "date +\"%H\"")
-(defpoll time_year :interval "5m"
-       "date +\"%C\"")
-(defpoll time_min :interval "5s"
-       "date +\"%M\"")
-(defpoll time_mer :interval "12h"
-        "date +\"%p\"")
-(defpoll time_day :interval "30m"
-       "date +\"%d\"")
-(defpoll time_month :interval "48h"
-      "date +\%m")
-(defpoll time_day_name :interval "30m"
-       "date +\"%A\"")
-(defpoll time_month_name :interval "48h"
-      "date +\%B")
+;; Music Player Integration - MPD/playerctl data
+(defpoll song :interval "2s"  "music_info --song")          ; Current song title
+(defpoll song_artist :interval "2s"  "music_info --artist") ; Current artist name
+(defpoll song_time :interval "1s"  "music_info --time")     ; Playback progress percentage
+(defpoll song_status :interval "2s"  "music_info --status") ; Play/Pause status icon
+(defpoll cover_art :interval "2s"  "music_info --cover")    ; Album cover art path/URL
+(defpoll loop_status :interval "5s"  "~/.config/eww/leftbar/scripts/music_info --loop_ic") ; Loop mode status
 
-(defpoll cpu :interval "17s" "cpu")
+;; Calendar Variables
+(defpoll calendar_day :interval "20h" "date '+%d'")   ; Current day of month
+(defpoll calendar_year :interval "20h" "date '+%Y'")  ; Current year
 
+;; Separate state variables for each monitor's animations
+(defvar vol_reveal-0 false)  ; For monitor 0
+(defvar vol_reveal-1 false)  ; For monitor 1
+(defvar br_reveal-0 false)   ; For monitor 0  
+(defvar br_reveal-1 false)   ; For monitor 1
+(defvar music_reveal-0 false) ; For monitor 0
+(defvar music_reveal-1 false) ; For monitor 1
+(defvar wifi_rev-0 false)    ; For monitor 0
+(defvar wifi_rev-1 false)    ; For monitor 1
+(defvar time_rev-0 false)    ; For monitor 0
+(defvar time_rev-1 false)    ; For monitor 1
 
-(defpoll wifi_icon :interval "15s" "wifi2 wifi")
-(defpoll wifi_col :interval "15s" "wifi2 wifi_col")
-(defpoll wifi_bg :interval "17s" "wifi2 wifi_bg")
+;; =============================================================================
+;; LEFTBAR-SPECIFIC VARIABLES
+;; =============================================================================
 
-(defpoll notif_icon :interval "15s" "notifs notifs")
-(defpoll notif_col :interval "15s" "notifs notifs_col")
-(defpoll notif_bg :interval "17s" "notifs notifs_bg")
+;; User Profile
+(defvar IMAGE "images/profile.png")                    ; User profile picture path
+(defpoll username :interval "48h"  "whoami")          ; System username
 
+;; System Uptime
+(defpoll uptime :interval "50s" "uptime -p | sed -e 's/up //;s/ hours,/h/;s/ hour,/h/;s/ minutes/m/;s/ minute/m/'")  ; Formatted uptime
 
-(defpoll vol_icon :interval "15s" "vol vol")
-(defpoll vol_col :interval "15s" "vol vol_col")
-(defpoll vol_bg :interval "17s" "vol vol_bg")
+;; Detailed Time Variables for Leftbar
+(defpoll time_hour :interval "5m" "date +\"%H\"")         ; Hour for leftbar
+(defpoll time_year :interval "5m" "date +\"%C\"")         ; Year for leftbar  
+(defpoll time_min :interval "5s" "date +\"%M\"")          ; Minute for leftbar
+(defpoll time_mer :interval "12h" "date +\"%p\"")         ; AM/PM indicator
+(defpoll time_day :interval "30m" "date +\"%d\"")         ; Day of month
+(defpoll time_month :interval "48h" "date +\%m")          ; Month number
+(defpoll time_day_name :interval "30m" "date +\"%A\"")    ; Day name (Monday, etc.)
+(defpoll time_month_name :interval "48h" "date +\%B")     ; Month name (January, etc.)
 
+;; System Performance
+(defpoll cpu :interval "17s" "cpu")  ; CPU usage percentage
 
-;; widgets
+;; Dynamic Icon and Color Variables - Change based on system state
+(defpoll wifi_icon :interval "15s" "wifi2 wifi")      ; WiFi icon with state
+(defpoll wifi_col :interval "15s" "wifi2 wifi_col")   ; WiFi icon color
+(defpoll wifi_bg :interval "17s" "wifi2 wifi_bg")     ; WiFi background color
+
+(defpoll notif_icon :interval "15s" "notifs notifs")    ; Notification icon
+(defpoll notif_col :interval "15s" "notifs notifs_col") ; Notification icon color  
+(defpoll notif_bg :interval "17s" "notifs notifs_bg")   ; Notification background
+
+(defpoll vol_icon :interval "15s" "vol vol")          ; Volume icon with mute state
+(defpoll vol_col :interval "15s" "vol vol_col")       ; Volume icon color
+(defpoll vol_bg :interval "17s" "vol vol_bg")         ; Volume background color
+
+;; =============================================================================
+;; WIDGET DEFINITIONS - Reusable UI Components
+;; =============================================================================
+
+;; Bluetooth Widget - Quick access to Bluetooth manager
 (defwidget bluetooth []
   (box :vexpand "false" :hexpand "false" 
     (button :class "module-wif"
-                        :onclick "hyprctl dispatch exec '[float; maxsize 2400 1200] ghostty -e bluetui'"
-      :style "color: ${COL_WLAN};" ""
-)))
+            :onclick "hyprctl dispatch exec '[float; maxsize 2400 1200] ghostty -e bluetui'"
+            :style "color: ${COL_WLAN};" "")))  ; Bluetooth icon
 
+;; WiFi Widget - Network connection status with hover reveal
 (defwidget wifi []
   (eventbox :onhover "eww update wifi_rev=true"
-			  :onhoverlost "eww update wifi_rev=false"
-		(box :vexpand "false" :hexpand "false" :space-evenly "false"
-				(button :class "module-wif"
-                        :onclick "hyprctl dispatch exec '[float; maxsize 2400 1200] ghostty -e impala'"
-                        :wrap "false" :limit-width 12 :style "color: ${COL_WLAN};" WLAN_ICON)
-	(revealer :transition "slidedown"
-			  :reveal wifi_rev
-			  :duration "350ms"))))
-;	(label    :class "module_essid"
-;			  :text ESSID_WLAN
-;			  :orientation "v"
-;			  )))))
+            :onhoverlost "eww update wifi_rev=false"
+    (box :vexpand "false" :hexpand "false" :space-evenly "false"
+      (button :class "module-wif"
+              :onclick "hyprctl dispatch exec '[float; maxsize 2400 1200] ghostty -e impala'"
+              :wrap "false" :limit-width 12 :style "color: ${COL_WLAN};" WLAN_ICON)
+      (revealer :transition "slidedown"
+                :reveal wifi_rev
+                :duration "350ms"))))
 
-
+;; Workspaces Widget - Hyprland workspace switcher with visual indicators
 (defwidget workspaces []
   (box :class "works" :orientation "h" :spacing 5 :space-evenly false
-  (for item in wrkspcs
-    (button
+    (for item in wrkspcs
+      (button
         :onclick "hyprctl dispatch workspace ${item.id}; eww update current_workspace=${item.id};"
         :class {(current_workspace == item.id) ? "m011" : ((item.status == 1) ? "m01" : "m0")}
-        {(current_workspace == item.id) ? "" : ""}))
-  )
-)
+        {(current_workspace == item.id) ? "" : ""}))  ; Filled circle for active, hollow for inactive
+  ))
 
-
+;; Battery Widget - Circular progress bar with battery percentage
 (defwidget bat []
-		(box :class "bat_module" :vexpand "false" :hexpand "false" 
-            (circular-progress :value battery
-                :class "batbar"
-                :thickness 4
-            (button 
-                :class "iconbat"
-                :limit-width 2
-                :tooltip "battery on ${battery}%"
-                :show_truncated false
-                :onclick "pop system"
-                :wrap false
-                ""))))
+  (box :class "bat_module" :vexpand "false" :hexpand "false" 
+    (circular-progress :value battery
+      :class "batbar"
+      :thickness 4
+      (button 
+        :class "iconbat"
+        :limit-width 2
+        :tooltip "battery on ${battery}%"
+        :show_truncated false
+        :onclick "pop system"  ; Open system info popup
+        :wrap false
+        ""))))  ; Center dot icon
 
-
+;; Memory Widget - Circular progress bar showing RAM usage
 (defwidget mem []
-		(box :class "mem_module" :vexpand "false"
-             :hexpand "false" :width 5
-            (circular-progress :value memory
-                :class "membar"
-                :thickness 4
-            (button
-                :class "iconmem"
-                ;:limit-width 2
-                :tooltip "using ${memory}% ram"
-                :onclick "pop system"
-                :show_truncated false
-                :wrap false
-                ""))))
+  (box :class "mem_module" :vexpand "false" :hexpand "false" :width 5
+    (circular-progress :value memory
+      :class "membar"
+      :thickness 4
+      (button
+        :class "iconmem"
+        :tooltip "using ${memory}% ram" 
+        :onclick "pop system"  ; Open system info popup
+        :show_truncated false
+        :wrap false
+        ""))))  ; Center dot icon
 
-
-
+;; Separator Widget - Visual divider between widget groups
 (defwidget sep []
   (box :class "module-2" :vexpand "false" :hexpand "false"
-    (label :class "separ" :text "|")))
+    (label :class "separ" :text "|")))  ; Vertical bar separator
 
+;; Clock Widget - Time display with date reveal on hover
 (defwidget clock_module []
   (eventbox :onhover "eww update time_rev=true"
-			  :onhoverlost "eww update time_rev=false"
+            :onhoverlost "eww update time_rev=false"
     (box :class "module" :space-evenly "false" :orientation "h" :spacing "3" 
-      (label :text clock_time :class "clock_time_class" )
-      (label :text "󰇙" :class "clock_time_sep" )
-      (label :text clock_minute :class "clock_minute_class")
-	  (revealer :transition "slideleft"
-			  :reveal time_rev
-			  :duration "350ms"
-      (button :class "clock_date_class"
-             :onclick "pop calendar" clock_date
-        )
-  ))))
-  
+      (label :text clock_time :class "clock_time_class")     ; Hours
+      (label :text "󰇙" :class "clock_time_sep")             ; Time separator
+      (label :text clock_minute :class "clock_minute_class") ; Minutes
+      (revealer :transition "slideleft"
+                :reveal time_rev
+                :duration "350ms"
+        (button :class "clock_date_class"
+                :onclick "pop calendar"  ; Open calendar popup
+                clock_date)))))
+
+;; Volume Widget - Audio control with slider reveal on hover
 (defwidget volume []
   (eventbox :onhover "eww update vol_reveal=true"
-			  :onhoverlost "eww update vol_reveal=false"
-  (box :class "module-2" :space-evenly "false" :orientation "h" :spacing "3" 
-	(button   :onclick "pop audio"   :class "volume_icon" "󰓃")
-	(revealer :transition "slideleft"
-			  :reveal vol_reveal
-			  :duration "350ms"
-	(scale    :class "volbar"
-			  :value volume_percent
-			  :orientation "h"
-			  :tooltip "${volume_percent}%"
-			  :max 100
-			  :min 0
-			  :onchange "amixer -D pulse sset Master {}%" )))))
+            :onhoverlost "eww update vol_reveal=false"
+    (box :class "module-2" :space-evenly "false" :orientation "h" :spacing "3" 
+      (button :onclick "pop audio" :class "volume_icon" "󰓃")  ; Volume icon
+      (revealer :transition "slideleft"
+                :reveal vol_reveal
+                :duration "350ms"
+        (scale :class "volbar"
+               :value volume_percent
+               :orientation "h"
+               :tooltip "${volume_percent}%"
+               :max 100
+               :min 0
+               :onchange "amixer -D pulse sset Master {}%" )))))  ; Update system volume
 
+;; Brightness Widget - Display brightness control with slider reveal
 (defwidget bright []
-  (eventbox :onhover "eww update br_reveal=true" :onhoverlost "eww update br_reveal=false"
-  (box :class "module-2" :space-evenly "false" :orientation "h" :spacing "3" 
-    (label :text "󰃝" :class "bright_icon" :tooltip "brightness")
-	(revealer :transition "slideleft"
-			  :reveal br_reveal
-			  :duration "350ms"
-	(scale    :class "brightbar"
-			  :value brightness
-			  :orientation "h"
-			  :tooltip "${brightness}%"
-			  :max 100
-			  :min 0
-			  :onchange "brightnessctl set {}%" )))))
+  (eventbox :onhover "eww update br_reveal=true" 
+            :onhoverlost "eww update br_reveal=false"
+    (box :class "module-2" :space-evenly "false" :orientation "h" :spacing "3" 
+      (label :text "󰃝" :class "bright_icon" :tooltip "brightness")  ; Brightness icon
+      (revealer :transition "slideleft"
+                :reveal br_reveal
+                :duration "350ms"
+        (scale :class "brightbar"
+               :value brightness
+               :orientation "h"
+               :tooltip "${brightness}%"
+               :max 100
+               :min 0
+               :onchange "brightnessctl set {}%" )))))  ; Update display brightness
 
-
-
-	;;  Music 
+;; Music Widget - Now playing info with playback controls reveal
 (defwidget music []
   (eventbox :onhover "eww update music_reveal=true"
-			  :onhoverlost "eww update music_reveal=false"
-		(box :class "module-2" :orientation "h" :space-evenly "false" :vexpand "false" :hexpand "false" 
-			(box :class "song_cover_art" :vexpand "false" :hexpand "false" :style "background-image: url('${cover_art}');")
-			(button :class "song" :onclick "pop music" song)
-	    (revealer :transition "slideright"
-			      :reveal music_reveal
-			      :duration "350ms"
-          (box :vexpand "false" :hexpand "false" :orientation "h" 
-                    (button :class "song_btn_prev" :onclick "music_info --prev" "")
-					(button :class "song_btn_play" :onclick "music_info --toggle" song_status)
-					(button :class "song_btn_next" :onclick "music_info --next" ""))))))
+            :onhoverlost "eww update music_reveal=false"
+    (box :class "module-2" :orientation "h" :space-evenly "false" :vexpand "false" :hexpand "false" 
+      (box :class "song_cover_art" :vexpand "false" :hexpand "false" :style "background-image: url('${cover_art}');")  ; Album art
+      (button :class "song" :onclick "pop music" song)  ; Song title button
+      (revealer :transition "slideright"
+                :reveal music_reveal
+                :duration "350ms"
+        (box :vexpand "false" :hexpand "false" :orientation "h" 
+          (button :class "song_btn_prev" :onclick "music_info --prev" "")    ; Previous track
+          (button :class "song_btn_play" :onclick "music_info --toggle" song_status)  ; Play/Pause
+          (button :class "song_btn_next" :onclick "music_info --next" "")    ; Next track
+        )))))
 
+;; =============================================================================
+;; Separate Widgets for Each Monitor
+;; =============================================================================
 
+;; Monitor 0 Widgets
+(defwidget clock_module-0 []
+  (eventbox :onhover "eww update time_rev-0=true"
+            :onhoverlost "eww update time_rev-0=false"
+    (box :class "module" :space-evenly "false" :orientation "h" :spacing "3" 
+      (label :text clock_time :class "clock_time_class")
+      (label :text "󰇙" :class "clock_time_sep")
+      (label :text clock_minute :class "clock_minute_class")
+      (revealer :transition "slideleft"
+                :reveal time_rev-0
+                :duration "350ms"
+        (button :class "clock_date_class"
+                :onclick "pop calendar" clock_date)))))
 
+(defwidget volume-0 []
+  (eventbox :onhover "eww update vol_reveal-0=true"
+            :onhoverlost "eww update vol_reveal-0=false"
+    (box :class "module-2" :space-evenly "false" :orientation "h" :spacing "3" 
+      (button :onclick "pop audio" :class "volume_icon" "󰓃")
+      (revealer :transition "slideleft"
+                :reveal vol_reveal-0
+                :duration "350ms"
+        (scale :class "volbar"
+               :value volume_percent
+               :orientation "h"
+               :tooltip "${volume_percent}%"
+               :max 100
+               :min 0
+               :onchange "amixer -D pulse sset Master {}%" )))))
+
+(defwidget bright-0 []
+  (eventbox :onhover "eww update br_reveal-0=true" 
+            :onhoverlost "eww update br_reveal-0=false"
+    (box :class "module-2" :space-evenly "false" :orientation "h" :spacing "3" 
+      (label :text "󰃝" :class "bright_icon" :tooltip "brightness")
+      (revealer :transition "slideleft"
+                :reveal br_reveal-0
+                :duration "350ms"
+        (scale :class "brightbar"
+               :value brightness
+               :orientation "h"
+               :tooltip "${brightness}%"
+               :max 100
+               :min 0
+               :onchange "brightnessctl set {}%" )))))
+
+(defwidget music-0 []
+  (eventbox :onhover "eww update music_reveal-0=true"
+            :onhoverlost "eww update music_reveal-0=false"
+    (box :class "module-2" :orientation "h" :space-evenly "false" :vexpand "false" :hexpand "false" 
+      (box :class "song_cover_art" :vexpand "false" :hexpand "false" :style "background-image: url('${cover_art}');")
+      (button :class "song" :onclick "pop music" song)
+      (revealer :transition "slideright"
+                :reveal music_reveal-0
+                :duration "350ms"
+        (box :vexpand "false" :hexpand "false" :orientation "h" 
+          (button :class "song_btn_prev" :onclick "music_info --prev" "")
+          (button :class "song_btn_play" :onclick "music_info --toggle" song_status)
+          (button :class "song_btn_next" :onclick "music_info --next" ""))))))
+
+(defwidget wifi-0 []
+  (eventbox :onhover "eww update wifi_rev-0=true"
+            :onhoverlost "eww update wifi_rev-0=false"
+    (box :vexpand "false" :hexpand "false" :space-evenly "false"
+      (button :class "module-wif"
+              :onclick "hyprctl dispatch exec '[float; maxsize 2400 1200] ghostty -e impala'"
+              :wrap "false" :limit-width 12 :style "color: ${COL_WLAN};" WLAN_ICON)
+      (revealer :transition "slidedown"
+                :reveal wifi_rev-0
+                :duration "350ms"))))
+
+;; Monitor 1 Widgets (same as above but with -1 suffix)
+(defwidget clock_module-1 []
+  (eventbox :onhover "eww update time_rev-1=true"
+            :onhoverlost "eww update time_rev-1=false"
+    (box :class "module" :space-evenly "false" :orientation "h" :spacing "3" 
+      (label :text clock_time :class "clock_time_class")
+      (label :text "󰇙" :class "clock_time_sep")
+      (label :text clock_minute :class "clock_minute_class")
+      (revealer :transition "slideleft"
+                :reveal time_rev-1
+                :duration "350ms"
+        (button :class "clock_date_class"
+                :onclick "pop calendar" clock_date)))))
+
+(defwidget volume-1 []
+  (eventbox :onhover "eww update vol_reveal-1=true"
+            :onhoverlost "eww update vol_reveal-1=false"
+    (box :class "module-2" :space-evenly "false" :orientation "h" :spacing "3" 
+      (button :onclick "pop audio" :class "volume_icon" "󰓃")
+      (revealer :transition "slideleft"
+                :reveal vol_reveal-1
+                :duration "350ms"
+        (scale :class "volbar"
+               :value volume_percent
+               :orientation "h"
+               :tooltip "${volume_percent}%"
+               :max 100
+               :min 0
+               :onchange "amixer -D pulse sset Master {}%" )))))
+
+(defwidget bright-1 []
+  (eventbox :onhover "eww update br_reveal-1=true" 
+            :onhoverlost "eww update br_reveal-1=false"
+    (box :class "module-2" :space-evenly "false" :orientation "h" :spacing "3" 
+      (label :text "󰃝" :class "bright_icon" :tooltip "brightness")
+      (revealer :transition "slideleft"
+                :reveal br_reveal-1
+                :duration "350ms"
+        (scale :class "brightbar"
+               :value brightness
+               :orientation "h"
+               :tooltip "${brightness}%"
+               :max 100
+               :min 0
+               :onchange "brightnessctl set {}%" )))))
+
+(defwidget music-1 []
+  (eventbox :onhover "eww update music_reveal-1=true"
+            :onhoverlost "eww update music_reveal-1=false"
+    (box :class "module-2" :orientation "h" :space-evenly "false" :vexpand "false" :hexpand "false" 
+      (box :class "song_cover_art" :vexpand "false" :hexpand "false" :style "background-image: url('${cover_art}');")
+      (button :class "song" :onclick "pop music" song)
+      (revealer :transition "slideright"
+                :reveal music_reveal-1
+                :duration "350ms"
+        (box :vexpand "false" :hexpand "false" :orientation "h" 
+          (button :class "song_btn_prev" :onclick "music_info --prev" "")
+          (button :class "song_btn_play" :onclick "music_info --toggle" song_status)
+          (button :class "song_btn_next" :onclick "music_info --next" ""))))))
+
+(defwidget wifi-1 []
+  (eventbox :onhover "eww update wifi_rev-1=true"
+            :onhoverlost "eww update wifi_rev-1=false"
+    (box :vexpand "false" :hexpand "false" :space-evenly "false"
+      (button :class "module-wif"
+              :onclick "hyprctl dispatch exec '[float; maxsize 2400 1200] ghostty -e impala'"
+              :wrap "false" :limit-width 12 :style "color: ${COL_WLAN};" WLAN_ICON)
+      (revealer :transition "slidedown"
+                :reveal wifi_rev-1
+                :duration "350ms"))))
+
+;; =============================================================================
+;; Layout Widgets for Each Monitor
+;; =============================================================================
+
+;; Monitor 0 Layout
+(defwidget left-0 []
+  (box :orientation "h" :space-evenly false :halign "end" :class "left_modules"
+    (bright-0) (volume-0) (bluetooth) (wifi-0) (sep) (bat) (mem) (sep) (clock_module-0)))
+
+(defwidget center-0 []
+  (box :orientation "h" :space-evenly false :halign "center" :class "center_modules"
+    (music-0)))
+
+(defwidget bar_1-0 []
+  (box :class "bar_class" :orientation "h"
+    (right) (center-0) (left-0)))
+
+;; Monitor 1 Layout
+(defwidget left-1 []
+  (box :orientation "h" :space-evenly false :halign "end" :class "left_modules"
+    (bright-1) (volume-1) (bluetooth) (wifi-1) (sep) (bat) (mem) (sep) (clock_module-1)))
+
+(defwidget center-1 []
+  (box :orientation "h" :space-evenly false :halign "center" :class "center_modules"
+    (music-1)))
+
+(defwidget bar_1-1 []
+  (box :class "bar_class" :orientation "h"
+    (right) (center-1) (left-1)))
+
+;; =============================================================================
+;; BAR LAYOUT WIDGETS - Main bar section organization
+;; =============================================================================
+
+;; Left Modules - System controls and indicators (aligned right)
 (defwidget left []
-	(box :orientation "h" 
-		 :space-evenly false  
-         :halign "end"
-		 :class "left_modules"
-(bright)
-(volume)
-(bluetooth)
-(wifi)
-(sep)
-(bat)
-(mem)
-(sep)
-(clock_module)))
+  (box :orientation "h" 
+       :space-evenly false  
+       :halign "end"
+       :class "left_modules"
+    (bright)     ; Brightness control
+    (volume)     ; Volume control  
+    (bluetooth)  ; Bluetooth access
+    (wifi)       ; WiFi status
+    (sep)        ; Separator
+    (bat)        ; Battery indicator
+    (mem)        ; Memory indicator
+    (sep)        ; Separator
+    (clock_module)))  ; Time and date
 
-
+;; Right Modules - Workspace management (aligned left)
 (defwidget right []
-	(box :orientation "h"
-		 :space-evenly false
-         :hexpand true
-         :halign "start"
-		 :class "right_modules"
-(workspaces)))
+  (box :orientation "h"
+       :space-evenly false
+       :hexpand true
+       :halign "start"
+       :class "right_modules"
+    (workspaces)))  ; Workspace switcher
 
-
+;; Center Modules - Music player info (centered)
 (defwidget center []
-	(box :orientation "h" 
-		 :space-evenly false  
-         :halign "center"
-		 :class "center_modules"
-(music)))
+  (box :orientation "h" 
+       :space-evenly false  
+       :halign "center"
+       :class "center_modules"
+    (music)))  ; Now playing information
 
+;; Main Bar Widget - Complete top bar assembly
 (defwidget bar_1 []
   (box :class "bar_class"
        :orientation "h"
-  (right)
-  (center)
-  (left)
-    ))
+    (right)    ; Workspaces on left side
+    (center)   ; Music in center
+    (left)     ; System controls on right side
+  ))
 
+;; Layout for Monitor 0
+(defwidget left-0 []
+  (box :orientation "h" :space-evenly false :halign "end" :class "left_modules"
+    (bright-0) (volume-0) (bluetooth) (wifi-0) (sep) (bat) (mem) (sep) (clock_module-0)))
+
+(defwidget bar_1-0 []
+  (box :class "bar_class" :orientation "h"
+    (right) (center-0) (left-0)))
+
+;; Layout for Monitor 1  
+(defwidget left-1 []
+  (box :orientation "h" :space-evenly false :halign "end" :class "left_modules"
+    (bright-1) (volume-1) (bluetooth) (wifi-1) (sep) (bat) (mem) (sep) (clock_module-1)))
+
+(defwidget bar_1-1 []
+  (box :class "bar_class" :orientation "h"
+    (right) (center-1) (left-1)))
+
+;; =============================================================================
+;; WINDOW DEFINITIONS - Actual EWW windows displayed on screen
+;; =============================================================================
+
+;; Single Monitor Top Bar - Primary bar for monitor 0 only
 (defwindow bar
-    :monitor 0
-          :geometry (geometry :x "0%"
-                       :y "0px"
+    :monitor 0                    ; Only display on monitor 0
+    :geometry (geometry :x "0%"   ; Full width positioning
+                       :y "0px"   ; Top of screen
                        :width "100%"
                        :height "30px"
                        :anchor "top center")
+    :exclusive true      ; Prevent other windows from overlapping
+    :focusable false     ; Cannot receive keyboard focus
+    :namespace "topbar"  ; Unique identifier for this window
+    :stacking "fg"       ; Display in foreground (on top)
+    :windowtype "dock"   ; Treat as dock/panel by window manager
+  (bar_1))  ; Use the main bar widget
+
+;; =============================================================================
+;; Multi-Monitor Bars
+;; =============================================================================
+
+;; Monitor 0 Bar with its own namespace
+(defwindow bar-allmonitors-0
+    :monitor 0
+    :geometry (geometry :x "0%" :y "0px" :width "100%" :height "30px" :anchor "top center")
     :exclusive true
     :focusable false
-    :namespace "topbar"
+    :namespace "topbar-0"
     :stacking "fg"
     :windowtype "dock"
-  (bar_1))
-  
+  (bar_1-0))  ; Use monitor 0 layout
+
+(defwindow bar-allmonitors-1
+    :monitor 1
+    :geometry (geometry :x "0%" :y "0px" :width "100%" :height "30px" :anchor "top center")
+    :exclusive true
+    :focusable false
+    :namespace "topbar-1"
+    :stacking "fg"
+    :windowtype "dock"
+  (bar_1-1))  ; Use monitor 1 layout
+
+;; =============================================================================
+;; POPUP WINDOWS - Secondary windows for detailed information
+;; =============================================================================
+
+;; System Info Popup Widget - Detailed battery and memory information
 (defwidget system []
   (box :class "sys_win" :orientation "v" :space-evenly "false" :hexpand "false" :vexpand "false" :spacing 0
-  (box :class "sys_bat_box" :orientation "h" :space-evenly "false"
+    ;; Battery Section
+    (box :class "sys_bat_box" :orientation "h" :space-evenly "false"
       (circular-progress :value battery
-                :class "sys_bat"
-                :thickness 9
-            (label :text ""
-                :class "sys_icon_bat"
-                :limit-width 2
-                :show_truncated false
-                :wrap false))
-            (box :orientation "v" :space-evenly "false" :spacing 0 :hexpand "false" :vexpand "false"
-            (label :text "battery"
-                :halign "start"
-                :class "sys_text_bat"
-                :limit-width 9
-                :show_truncated false
-                :wrap false)
-            (label :text "${battery}%"
-                :halign "start"
-                :class "sys_text_bat_sub"
-                :limit-width 22
-                :show_truncated false
-                :wrap false)
-            (label :text "${battery_status}"
-                :halign "start"
-                :class "sys_text_bat_sub"
-                :limit-width 22
-                :show_truncated false
-                :wrap false)))
-            (label :text "" :class "sys_sep" :halign "center")
-  (box :class "sys_mem_box" :orientation "h" :space-evenly "false" :halign "start"
+        :class "sys_bat"
+        :thickness 9
+        (label :text ""  ; Battery icon
+          :class "sys_icon_bat"
+          :limit-width 2
+          :show_truncated false
+          :wrap false))
+      (box :orientation "v" :space-evenly "false" :spacing 0 :hexpand "false" :vexpand "false"
+        (label :text "battery"  ; Section title
+          :halign "start"
+          :class "sys_text_bat"
+          :limit-width 9
+          :show_truncated false
+          :wrap false)
+        (label :text "${battery}%"  ; Battery percentage
+          :halign "start"
+          :class "sys_text_bat_sub"
+          :limit-width 22
+          :show_truncated false
+          :wrap false)
+        (label :text "${battery_status}"  ; Charging status
+          :halign "start"
+          :class "sys_text_bat_sub"
+          :limit-width 22
+          :show_truncated false
+          :wrap false)))
+    ;; Visual separator
+    (label :text "" :class "sys_sep" :halign "center")
+    ;; Memory Section
+    (box :class "sys_mem_box" :orientation "h" :space-evenly "false" :halign "start"
       (circular-progress :value memory
-                :class "sys_mem"
-                :thickness 9
-            (label :text ""
-                :class "sys_icon_mem"
-                :limit-width 2
-                :show_truncated false
-                :wrap false
-                :angle 0.0))
-            (box :orientation "v" :space-evenly "false" :spacing 0 :hexpand "false" :vexpand "false"
-            (label :text "memory"
-                :halign "start"
-                :class "sys_text_mem"
-                :limit-width 9
-                :show_truncated false
-                :wrap false)
-            (label :text "${memory_used_mb} | ${memory_total_mb}mb "
-                :halign "start"
-                :class "sys_text_mem_sub"
-                :limit-width 22
-                :show_truncated false
-                :wrap false)
-            (label :text "${memory_free_mb}mb free"
-                :halign "start"
-                :class "sys_text_mem_sub"
-                :limit-width 22
-                :show_truncated false
-                :wrap false)))))
+        :class "sys_mem"
+        :thickness 9
+        (label :text ""  ; Memory icon
+          :class "sys_icon_mem"
+          :limit-width 2
+          :show_truncated false
+          :wrap false
+          :angle 0.0))
+      (box :orientation "v" :space-evenly "false" :spacing 0 :hexpand "false" :vexpand "false"
+        (label :text "memory"  ; Section title
+          :halign "start"
+          :class "sys_text_mem"
+          :limit-width 9
+          :show_truncated false
+          :wrap false)
+        (label :text "${memory_used_mb} | ${memory_total_mb}mb "  ; Memory usage stats
+          :halign "start"
+          :class "sys_text_mem_sub"
+          :limit-width 22
+          :show_truncated false
+          :wrap false)
+        (label :text "${memory_free_mb}mb free"  ; Free memory
+          :halign "start"
+          :class "sys_text_mem_sub"
+          :limit-width 22
+          :show_truncated false
+          :wrap false)))))
 
+;; Calendar Widget - Simple date display
 (defwidget cal []
-	(box :class "cal" :orientation "v"
-	(box :class "cal-in"
-	(calendar :class "cal" 
-			  :day calendar_day 
-			  :year calendar_year))))
+  (box :class "cal" :orientation "v"
+    (box :class "cal-in"
+      (calendar :class "cal" 
+                :day calendar_day 
+                :year calendar_year))))
 
+;; Calendar Popup Window
 (defwindow calendar
-	:geometry (geometry :x "-20px" 
-						:y "7%" 
-                        :anchor "top right"
-						:width "270px" 
-						:height "60px")
-(cal))
+  :geometry (geometry :x "-20px"     ; Positioned off right edge
+                      :y "7%"        ; 7% from top of screen
+                      :anchor "top right"
+                      :width "270px" 
+                      :height "60px")
+  (cal))
 
-
-
+;; Audio Control Popup Widget - Detailed volume and microphone controls
 (defwidget audio []
-	(box :class "audio-box" :orientation "v" :space-evenly "false" :vexpand "false" :hexpand "false"
-	(box :halign "v" :space-evenly "false" :hexpand "false" :vexpand "false"
-	(box :class "speaker_icon" :orientation "v")
-	(box :orientation "v" :halign "center" :vexpand "false" :hexpand "false"
-    (label :class "speaker_text" :text "speaker" :valign "center" :halign "left" )
-	(box :class "speaker_bar" :halign "center" :vexpand "false" :hexpand "false"
-	(scale    :value volume_percent
-              :space-evenly "false"
-			  :orientation "h"
-			  :onchange "amixer -D pulse sset Master {}%" 
-              :tooltip "volume on ${volume_percent}%"
-			  :max 100
-			  :min 0))))
-            (label :text "" :class "audio_sep" :halign "center")
-	(box :halign "v" :space-evenly "false" :hexpand "false" :vexpand "false"
-	(box :class "mic_icon" :orientation "v")
-	(box :orientation "v" :halign "center" :vexpand "false" :hexpand "false"
-    (label :class "mic_text" :text "mic" :valign "center" :halign "left" )
-	(box :class "mic_bar" :halign "center" :vexpand "false" :hexpand "false"
-	(scale    :value mic_percent
-              :space-evenly "false"
-			  :orientation "h"
-              :tooltip "mic on ${mic_percent}%"
-			  :onchange "amixer -D pulse sset Capture {}%" 
-			  :max 100
-			  :min 0))))))
+  (box :class "audio-box" :orientation "v" :space-evenly "false" :vexpand "false" :hexpand "false"
+    ;; Speaker Volume Section
+    (box :halign "v" :space-evenly "false" :hexpand "false" :vexpand "false"
+      (box :class "speaker_icon" :orientation "v")  ; Icon placeholder
+      (box :orientation "v" :halign "center" :vexpand "false" :hexpand "false"
+        (label :class "speaker_text" :text "speaker" :valign "center" :halign "left")  ; Label
+        (box :class "speaker_bar" :halign "center" :vexpand "false" :hexpand "false"
+          (scale :value volume_percent
+                 :space-evenly "false"
+                 :orientation "h"
+                 :onchange "amixer -D pulse sset Master {}%"  ; Volume control
+                 :tooltip "volume on ${volume_percent}%"
+                 :max 100
+                 :min 0))))
+    ;; Visual separator
+    (label :text "" :class "audio_sep" :halign "center")
+    ;; Microphone Section
+    (box :halign "v" :space-evenly "false" :hexpand "false" :vexpand "false"
+      (box :class "mic_icon" :orientation "v")  ; Icon placeholder
+      (box :orientation "v" :halign "center" :vexpand "false" :hexpand "false"
+        (label :class "mic_text" :text "mic" :valign "center" :halign "left")  ; Label
+        (box :class "mic_bar" :halign "center" :vexpand "false" :hexpand "false"
+          (scale :value mic_percent
+                 :space-evenly "false"
+                 :orientation "h"
+                 :tooltip "mic on ${mic_percent}%"
+                 :onchange "amixer -D pulse sset Capture {}%"  ; Microphone control
+                 :max 100
+                 :min 0))))))
 
+;; Audio Control Popup Window
 (defwindow audio_ctl
-	:geometry (geometry :x "-20px" 
-						:y "7%" 
-                        :anchor "top right"
-						:width "280px" 
-						:height "60px")
-(audio))
+  :geometry (geometry :x "-20px"     ; Positioned off right edge  
+                      :y "7%"        ; 7% from top of screen
+                      :anchor "top right"
+                      :width "280px" 
+                      :height "60px")
+  (audio))
 
-
+;; System Info Popup Window
 (defwindow system
-	:geometry (geometry :x "-20px" 
-						:y "7%" 
-                        :anchor "top right"
-						:width "290px" 
-						:height "120px")
-(system))
+  :geometry (geometry :x "-20px"     ; Positioned off right edge
+                      :y "7%"        ; 7% from top of screen  
+                      :anchor "top right"
+                      :width "290px" 
+                      :height "120px")
+  (system))
 
+;; =============================================================================
+;; MUSIC PLAYER POPUP - Enhanced music controls and information
+;; =============================================================================
 
-
-;;  Music
+;; Music Popup Widget - Large format music player with full controls
 (defwidget music_pop []
-		(box :class "music_pop" :orientation "h" :space-evenly "false" :vexpand "false" :hexpand "false"
-			(box :class "music_cover_art" :vexpand "false" :hexpand "false" :style "background-image: url('${cover_art}');")
-			(box :orientation "v" :spacing 20 :space-evenly "false" :vexpand "false" :hexpand "false"
-				(label :halign "center" :class "music" :wrap "true" :limit-width 13 :text song)
-				(label :halign "center" :class "music_artist" :wrap "true" :limit-width 15 :text song_artist)
-				(box :orientation "h" :spacing 15 :halign "center" :space-evenly "false" :vexpand "false" :hexpand "false"
-					(button :class "music_btn_prev" :onclick "music_info --prev" "")
-					(button :class "music_btn_play" :onclick "music_info --toggle" song_status)
-					(button :class "music_btn_next" :onclick "music_info --next" ""))
-				(box :class "music_bar" :halign "center" :vexpand "false" :hexpand "false" :space-evenly "false"
-					(scale :onscroll "mpc -q seek {}" :min 0 :active "true" :max 100 :value song_time)))))
+  (box :class "music_pop" :orientation "h" :space-evenly "false" :vexpand "false" :hexpand "false"
+    ;; Album cover art
+    (box :class "music_cover_art" :vexpand "false" :hexpand "false" :style "background-image: url('${cover_art}');")
+    ;; Music info and controls
+    (box :orientation "v" :spacing 20 :space-evenly "false" :vexpand "false" :hexpand "false"
+      (label :halign "center" :class "music" :wrap "true" :limit-width 13 :text song)          ; Song title
+      (label :halign "center" :class "music_artist" :wrap "true" :limit-width 15 :text song_artist) ; Artist name
+      ;; Playback controls
+      (box :orientation "h" :spacing 15 :halign "center" :space-evenly "false" :vexpand "false" :hexpand "false"
+        (button :class "music_btn_prev" :onclick "music_info --prev" "")    ; Previous track
+        (button :class "music_btn_play" :onclick "music_info --toggle" song_status)  ; Play/Pause
+        (button :class "music_btn_next" :onclick "music_info --next" ""))   ; Next track
+      ;; Progress bar
+      (box :class "music_bar" :halign "center" :vexpand "false" :hexpand "false" :space-evenly "false"
+        (scale :onscroll "mpc -q seek {}"  ; Seek with mouse scroll
+               :min 0 :active "true" :max 100 :value song_time)))))
 
+;; Music Popup Window - Centered at top of screen
+(defwindow music_win :stacking "fg" :focusable "false" :screen 0
+  :geometry (geometry :x "0" :y "2%"          ; Centered near top
+                      :width 528 :height 104 
+                      :anchor "top center")
+  (music_pop))
 
-;;  music
-		(defwindow music_win :stacking "fg" :focusable "false" :screen 0
-			    :geometry (geometry :x "0" :y "2%" :width 528 :height 104 :anchor "top center")
-			     				(music_pop))
+;; =============================================================================
+;; LEFTBAR WIDGETS - Sidebar configuration (partially commented out)
+;; =============================================================================
 
-;;;;;   leftbar now
+;; User Profile Widget - Profile picture display
 (defwidget profile []
   (box :orientation "v" :spacing 20 :space-evenly "false" :vexpand "false" :hexpand "false" 
-				(box :class "profile_picture" :halign "center" :style "background-image: url('${IMAGE});")))
+    (box :class "profile_picture" :halign "center" :style "background-image: url('${IMAGE}');")))
 
+;; Detailed Time Widget - Formatted time display for sidebar
 (defwidget time [] 
-		(box  
-             :orientation "v" 
-             :space-evenly "false" 
-             :vexpand "false" 
-             :hexpand "false" 
-             :spacing 0
-		(box  
-             :orientation "h" 
-             :space-evenly "false" 
-             :vexpand "false" 
-             :halign "start"
-             :hexpand "false" 
-             :spacing 0
-			 (label :class "hour_class" 
-                    :valign "start" 
-                    :halign "start"
-                    :wrap "true" 
-                    :limit-width 25 
-                    :text time_hour)
-			 (label :class "minute_class" 
-                    :valign "start" 
-                    :halign "start" 
-                    :wrap "true" 
-                    :limit-width 25 
-                    :text time_min)
-			 (label :class "mer_class" 
-                    :valign "start" 
-                    :halign "start" 
-                    :wrap "true" 
-                    :text time_mer))
-            (box :orientation "h" 
-              :spacing 0 
-              :space-evenly "false" 
-              :halign "start"
-              :vexpand "false" :hexpand "false" 
-			  (label :class "day_class" 
-                     :valign "start" 
-                     :text time_day)
-			  (label :class "time_sep"
-                     :valign "start" 
-                     :text " ")
-			  (label :class "month_class" 
-                     :valign "start" 
-                     :text time_month)
-			  (label :class "year_class" 
-                     :valign "start" 
-                     :text time_year))
-            (box :orientation "h" 
-              :spacing 0 
-              :space-evenly "false" 
-              :halign "start"
-              :vexpand "false" :hexpand "false" 
-			  (label :class "day_class_n" 
-                     :valign "start" 
-                     :text time_day_name)
-			  (label :class "time_sep_class"
-                     :valign "start" 
-                     :text ", ")
-			  (label :class "month_class_n" 
-                     :valign "start" 
-                     :text time_month_name))))
+  (box :orientation "v" :space-evenly "false" :vexpand "false" :hexpand "false" :spacing 0
+    ;; Time row: Hour, Minute, AM/PM
+    (box :orientation "h" :space-evenly "false" :vexpand "false" :halign "start" :hexpand "false" :spacing 0
+      (label :class "hour_class" :valign "start" :halign "start" :wrap "true" :limit-width 25 :text time_hour)
+      (label :class "minute_class" :valign "start" :halign "start" :wrap "true" :limit-width 25 :text time_min) 
+      (label :class "mer_class" :valign "start" :halign "start" :wrap "true" :text time_mer))
+    ;; Date row: Day, Month, Year (numeric)
+    (box :orientation "h" :spacing 0 :space-evenly "false" :halign "start" :vexpand "false" :hexpand "false" 
+      (label :class "day_class" :valign "start" :text time_day)
+      (label :class "time_sep" :valign "start" :text " ")
+      (label :class "month_class" :valign "start" :text time_month)
+      (label :class "year_class" :valign "start" :text time_year))
+    ;; Full date row: Day name, Month name
+    (box :orientation "h" :spacing 0 :space-evenly "false" :halign "start" :vexpand "false" :hexpand "false" 
+      (label :class "day_class_n" :valign "start" :text time_day_name)
+      (label :class "time_sep_class" :valign "start" :text ", ")
+      (label :class "month_class_n" :valign "start" :text time_month_name))))
 
+;; Music Info Widget for Leftbar - Compact music display
 (defwidget music_left []
-		(box :orientation "v" :space-evenly "false" :vexpand "false" :hexpand "false"
-			(box :orientation "v" :spacing 5 :space-evenly "false" :vexpand "false" :hexpand "false" :class "msc_bg"
-				(label :halign "start" :class "song" :wrap "false" :limit-width 12 :text song)
-				(label :halign "start" :class "song_artist" :wrap "true" :limit-width 15 :text song_artist))))
+  (box :orientation "v" :space-evenly "false" :vexpand "false" :hexpand "false"
+    (box :orientation "v" :spacing 5 :space-evenly "false" :vexpand "false" :hexpand "false" :class "msc_bg"
+      (label :halign "start" :class "song" :wrap "false" :limit-width 12 :text song)          ; Song title
+      (label :halign "start" :class "song_artist" :wrap "true" :limit-width 15 :text song_artist)))) ; Artist
 
+;; Music Controls Widget for Leftbar - Vertical control buttons
 (defwidget music_ctl []
-				(box :orientation "v" :spacing 1 :halign "center" :space-evenly "false" :vexpand "false" :hexpand "false" :class "msc_ctl_bg"
-					(button :class "song_btn_prev" :onclick "music_info --prev" "")
-					(button :class "song_btn_play" :onclick "music_info --toggle" song_status)
-					(button :class "song_btn_next" :onclick "music_info --next" "")
-					(button :class "song_btn_loop" :onclick "music_info --loop" loop_status)))
+  (box :orientation "v" :spacing 1 :halign "center" :space-evenly "false" :vexpand "false" :hexpand "false" :class "msc_ctl_bg"
+    (button :class "song_btn_prev" :onclick "music_info --prev" "")    ; Previous
+    (button :class "song_btn_play" :onclick "music_info --toggle" song_status)  ; Play/Pause
+    (button :class "song_btn_next" :onclick "music_info --next" "")    ; Next
+    (button :class "song_btn_loop" :onclick "music_info --loop" loop_status)))  ; Loop mode
 
+;; Music Progress Widget for Leftbar - Playback progress bar
 (defwidget music_prog []
-			(box :orientation "v" :spacing 5 :space-evenly "false" :vexpand "false" :hexpand "false" :class "music_prog_bg"
-				(scale :value song_time :halign "start" :class "song_prog")))
+  (box :orientation "v" :spacing 5 :space-evenly "false" :vexpand "false" :hexpand "false" :class "music_prog_bg"
+    (scale :value song_time :halign "start" :class "song_prog")))  ; Progress slider
 
+;; Main Leftbar Background Widget
 (defwidget main []
   (box :class "bg" :orientation "h" :space-evenly "false"))
 
-(defwidget sep []
+;; Leftbar Separator Widget
+(defwidget sep_leftbar []
   (box :class "sep_left" :orientation "h" :space-evenly "false"))
 
-
+;; System Usage Widget for Leftbar - Circular metrics for battery, CPU, memory
 (defwidget system_left []
   (box :class "sys_win" :orientation "h" :space-evenly "false" :hexpand "false" :vexpand "false" :spacing 13 
-      (box :class "sys_bat_box" :orientation "v" :space-evenly "false" :hexpand "false" :vexpand "false"
+    ;; Battery indicator
+    (box :class "sys_bat_box" :orientation "v" :space-evenly "false" :hexpand "false" :vexpand "false"
       (circular-progress :value battery
-                :class "sys_bat"
-                :thickness 100
-            (label :text " "
-                :class "cc_cc"
-                :limit-width 2
-                :show_truncated false
-                :wrap false))
-            (label :text "BAT"
-                :class "sys_icon_bat"
-                :limit-width 4
-                :show_truncated false
-                :wrap false))
-      (box :class "sys_cpu_box" :orientation "v" :space-evenly "false" :hexpand "false" :vexpand "false"
+        :class "sys_bat"
+        :thickness 100
+        (label :text " " :class "cc_cc" :limit-width 2 :show_truncated false :wrap false))  ; Center spacer
+      (label :text "BAT"  ; Label
+        :class "sys_icon_bat"
+        :limit-width 4
+        :show_truncated false
+        :wrap false))
+    ;; CPU indicator  
+    (box :class "sys_cpu_box" :orientation "v" :space-evenly "false" :hexpand "false" :vexpand "false"
       (circular-progress :value cpu
-                :class "sys_cpu"
-                :thickness 100
-            (label :text " "
-                :class "cc_cc"
-                :limit-width 2
-                :show_truncated false
-                :wrap false))
-            (label :text "CPU"
-                :class "sys_icon_cpu"
-                :limit-width 4
-                :show_truncated false
-                :wrap false))
-      (box :class "sys_mem_box" :orientation "v" :space-evenly "false" :hexpand "false" :vexpand "false"
+        :class "sys_cpu"
+        :thickness 100
+        (label :text " " :class "cc_cc" :limit-width 2 :show_truncated false :wrap false))  ; Center spacer
+      (label :text "CPU"  ; Label
+        :class "sys_icon_cpu"
+        :limit-width 4
+        :show_truncated false
+        :wrap false))
+    ;; Memory indicator
+    (box :class "sys_mem_box" :orientation "v" :space-evenly "false" :hexpand "false" :vexpand "false"
       (circular-progress :value memory
-                :class "sys_mem"
-                :thickness 100
-            (label :text " "
-                :class "cc_cc"
-                :limit-width 2
-                :show_truncated false
-                :wrap false
-                :angle 0.0))
-            (label :text "MEM"
-                :class "sys_icon_mem"
-                :limit-width 4
-                :show_truncated false
-                   :wrap false))))
+        :class "sys_mem"
+        :thickness 100
+        (label :text " " :class "cc_cc" :limit-width 2 :show_truncated false :wrap false :angle 0.0))  ; Center spacer
+      (label :text "MEM"  ; Label
+        :class "sys_icon_mem"
+        :limit-width 4
+        :show_truncated false
+        :wrap false))))
 
-		(defwidget audio_left []
-			(box :vexpand "false" :hexpand "false"
-				(box :orientation "h" :spacing 25 :halign "center" :valign "center" :space-evenly "false" :vexpand "false" :hexpand "false"
-					(box :class "volume_bar" :orientation "v" :spacing 20 :space-evenly "false" :vexpand "false" :hexpand "false"
-                            (scale :flipped "true" :orientation "v" :min 0 :max 101 :value volume_percent :onchange "amixer -D pulse sset Master {}%" )
-                            (label  :text "" :class "vol_icon"))
-					(box :class "mic_bar" :orientation "v" :spacing 20 :space-evenly "false" :vexpand "false" :hexpand "false"
-                            (scale :flipped "true" :orientation "v" :min 0 :max 101 :value mic_percent :active "false")
-                            (label  :text "" :class "mic_icon")))))
+;; Audio Controls Widget for Leftbar - Vertical volume and mic sliders
+(defwidget audio_left []
+  (box :vexpand "false" :hexpand "false"
+    (box :orientation "h" :spacing 25 :halign "center" :valign "center" :space-evenly "false" :vexpand "false" :hexpand "false"
+      ;; Volume control
+      (box :class "volume_bar" :orientation "v" :spacing 20 :space-evenly "false" :vexpand "false" :hexpand "false"
+        (scale :flipped "true" :orientation "v" :min 0 :max 101 :value volume_percent :onchange "amixer -D pulse sset Master {}%" )  ; Vertical slider
+        (label :text "" :class "vol_icon"))  ; Volume icon
+      ;; Microphone control (read-only)
+      (box :class "mic_bar" :orientation "v" :spacing 20 :space-evenly "false" :vexpand "false" :hexpand "false"
+        (scale :flipped "true" :orientation "v" :min 0 :max 101 :value mic_percent :active "false")  ; Vertical slider (inactive)
+        (label :text "" :class "mic_icon")))))  ; Microphone icon
 
-
+;; System Tray Widget - Quick access buttons for common functions
 (defwidget sustray []
-  (box :class "sus_tray" :valign "center"  :space-evenly "false" :orientation "h"
+  (box :class "sus_tray" :valign "center" :space-evenly "false" :orientation "h"
     (box :orientation "h" :hexpand "false" :vexpand "false" :space-evenly "false"
-      (button :class "wifi_but" :onclick "networkmanager_dmenu" :style "color: ${wifi_col}; background-color: ${wifi_bg};"  wifi_icon)
-      (button :class "notif_but" :onclick "dunstctl set-paused toggle" :style "color: ${notif_col}; background-color: ${notif_bg};"  notif_icon))
+      (button :class "wifi_but" :onclick `(exec "networkmanager_dmenu")` :style "color: ${wifi_col}; background-color: ${wifi_bg};" wifi_icon)
+      (button :class "notif_but" :onclick `(exec "dunstctl set-paused toggle")` :style "color: ${notif_col}; background-color: ${notif_bg};" notif_icon))
     (box :orientation "h" :hexpand "false" :vexpand "false" :space-evenly "false"
-      (button :class "vol_but" :onclick "amixer -D pulse set Master toggle" :style "color: ${vol_col}; background-color: ${vol_bg};"  vol_icon)
-      (button :class "log_but" :onclick "bspc quit" "")
-      (button :class "log_but" :onclick "poweroff" ""))))
-
-(defwidget stats []
-  (box :orientation "h" :space-evenly "false"
-;;    (label :class "br_icon" :text "")
-	  (box :class "bright" :orientation "h" :space-evenly "false" :vexpand "false" :hexpand "false"
-          (scale :orientation "h" :min 0 :max 100 :value brightness :onchange "brightnessctl set {}%" ))))
-
-(defwindow main
-  :monitor 0
-    :geometry (geometry :anchor "left center"
-               :width "500px"
-               :height "90%"
-               :x "0px"
-               :y "20px")
-  (main))
-
-
-;(defwindow pfp
-;  :geometry (geometry :anchor "left top"
-;             :width "190px"
-;             :height "23"
-;             :x "0px"
-;             :y "65px")
-;  (profile))
-;
-;
-;(defwindow time
-;  :geometry (geometry :anchor "left top"
-;             :width "260px"
-;             :height "100"
-;             :x "220px"
-;             :y "100px")
-;  (time))
-;
-;
-;(defwindow song :stacking "fg" :focusable "false" :screen 1
-;  :geometry (geometry 
-;             :width "260px"
-;             :height "140px"
-;             :x "0px"
-;             :y "300px")
-;  (music_left))
-;
-;(defwindow song_ctl :stacking "fg" :focusable "false" :screen 1
-;  :geometry (geometry 
-;             :width "70px"
-;             :height "187px"
-;             :x "270px"
-;             :y "310px")
-;  (music_ctl))
-;
-;
-;(defwindow song_prog :stacking "fg" :focusable "false" :screen 1
-;  :geometry (geometry 
-;             :width "250px"
-;             :height "30px"
-;             :x "10px"
-;             :y "460px")
-;  (music_prog))
-;
-;(defwindow seper :stacking "fg" :focusable "false" :screen 1
-;  :geometry (geometry 
-;             :width "420px"
-;             :height "2px"
-;             :x "25px"
-;             :y "270px")
-;  (sep))
-;
-;
-;(defwindow sys_usg
-;  :geometry (geometry
-;             :width "420px"
-;             :height "160px"
-;             :x "10px"
-;             :y "510px")
-;  (system_left))
-;
-;
-;
-;(defwindow audio
-;  :geometry (geometry
-;             :width "0px"
-;             :height "160px"
-;             :x "370px"
-;             :y "307px")
-;  (audio_left))
-;
-;
-;(defwindow sys_tray
-;  :geometry (geometry
-;             :width "100px"
-;             :height "120px"
-;             :x "15px"
-;             :y "730px")
-;  (sustray))
-;
-;
-;(defwindow quote
-;  :geometry (geometry
-;             :width "295px"
-;             :height "10px"
-;             :x "5px"
-;             :y "695px")
-;  (stats))
-; 
+      (button :class "vol_but" :onclick `(exec "amixer -D pulse set Master toggle")` :style "color: ${vol_col}; background-color: ${vol_bg};" vol_icon)
+      (button :class "log_but" :onclick `(exec "bspc quit")` "")
+      (button :class "log_but" :onclick `(exec "poweroff")` "")))) ; ← This completes the sustray widget
