@@ -2,7 +2,6 @@
 ;; EWW (Elkowar's Wacky Widgets) Configuration
 ;; A comprehensive status bar and widget system for Hyprland
 ;; =============================================================================
-
 ;; =============================================================================
 ;; VARIABLE DEFINITIONS - System Monitoring & Data Sources
 ;; =============================================================================
@@ -70,6 +69,19 @@
 (defvar time_rev-1 false)    ; For monitor 1
 
 ;; =============================================================================
+;; TERMINAL CONFIGURATION - Use cached value
+;; =============================================================================
+
+;; Read from cache file (falls back to detection if cache doesn't exist)
+(defpoll default_terminal :interval "1h" "cat /tmp/eww-terminal-cache 2>/dev/null || ~/.config/eww/scripts/detect-terminal")
+
+;; Terminal command templates
+(defvar term_cmd "${default_terminal}")
+(defvar float_cmd "${default_terminal}")
+(defvar term_exec `(exec "${default_terminal} -e"`)
+(defvar float_exec `(exec "${default_terminal} -e"`)
+
+;; =============================================================================
 ;; LEFTBAR-SPECIFIC VARIABLES
 ;; =============================================================================
 
@@ -114,7 +126,7 @@
 (defwidget bluetooth []
   (box :vexpand "false" :hexpand "false" 
     (button :class "module-wif"
-            :onclick "hyprctl dispatch exec '[float; maxsize 2400 1200] ghostty -e bluetui'"
+            :onclick "hyprctl dispatch exec '[float; maxsize 2400 1200] ${default_terminal} -e bluetui'"
             :style "color: ${COL_WLAN};" "")))  ; Bluetooth icon
 
 ;; WiFi Widget - Network connection status with hover reveal
@@ -123,7 +135,7 @@
             :onhoverlost "eww update wifi_rev=false"
     (box :vexpand "false" :hexpand "false" :space-evenly "false"
       (button :class "module-wif"
-              :onclick "hyprctl dispatch exec '[float; maxsize 2400 1200] ghostty -e impala'"
+              :onclick "hyprctl dispatch exec '[float; maxsize 2400 1200] ${default_terminal} -e impala'"
               :wrap "false" :limit-width 12 :style "color: ${COL_WLAN};" WLAN_ICON)
       (revealer :transition "slidedown"
                 :reveal wifi_rev
@@ -302,12 +314,14 @@
           (button :class "song_btn_play" :onclick "music_info --toggle" song_status)
           (button :class "song_btn_next" :onclick "music_info --next" ""))))))
 
+
+;; Monitor 0 WiFi Widget
 (defwidget wifi-0 []
   (eventbox :onhover "eww update wifi_rev-0=true"
             :onhoverlost "eww update wifi_rev-0=false"
     (box :vexpand "false" :hexpand "false" :space-evenly "false"
       (button :class "module-wif"
-              :onclick "hyprctl dispatch exec '[float; maxsize 2400 1200] ghostty -e impala'"
+              :onclick "hyprctl dispatch exec '[float; maxsize 2400 1200] ${default_terminal} -e impala'"
               :wrap "false" :limit-width 12 :style "color: ${COL_WLAN};" WLAN_ICON)
       (revealer :transition "slidedown"
                 :reveal wifi_rev-0
@@ -378,7 +392,7 @@
             :onhoverlost "eww update wifi_rev-1=false"
     (box :vexpand "false" :hexpand "false" :space-evenly "false"
       (button :class "module-wif"
-              :onclick "hyprctl dispatch exec '[float; maxsize 2400 1200] ghostty -e impala'"
+              :onclick "hyprctl dispatch exec '[float; maxsize 2400 1200] ${default_terminal} -e impala'"
               :wrap "false" :limit-width 12 :style "color: ${COL_WLAN};" WLAN_ICON)
       (revealer :transition "slidedown"
                 :reveal wifi_rev-1
